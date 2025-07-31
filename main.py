@@ -272,8 +272,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[
 
-                                                html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H4("Data Status:"),                                    
 
@@ -307,6 +306,11 @@ app.layout = html.Div(
                                         html.Div([
                                             html.H4("Apply Filters to the data table: ", style={'display': 'inline-block', 'margin-right': '10px'}),
                                             html.Span(id='patient-count-display', style={'font-size': '18px', 'font-weight': 'bold', 'color': uclaBlue})
+                                        ], style={'margin-bottom': '10px'}),
+
+                                        html.Div([
+                                            html.Span("Total patients in dataset: ", style={'font-size': '16px', 'color': '#666'}),
+                                            html.Span(id='total-patient-count-display', style={'font-size': '16px', 'font-weight': 'bold', 'color': '#666'})
                                         ], style={'margin-bottom': '20px'}),
 
                                         html.Div(
@@ -398,8 +402,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[                        
 
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("Y-axis:"),
 
@@ -468,7 +471,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[
 
-                                                html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("Color:"),
 
@@ -531,9 +534,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[                        
 
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("Y-axis:"),
 
@@ -599,7 +600,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[
 
-                                                html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("Distribution:"),
 
@@ -661,8 +662,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[                        
 
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("Y-axis:"),
 
@@ -721,43 +721,6 @@ app.layout = html.Div(
                                     ]
                                 ),
 
-                                # Right controls
-                                html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
-                                    children=[
-
-                                        # Change to side-by-side for mobile layout
-                                        html.Div(
-                                            className="row",
-                                            children=[
-
-                                                html.Br(),html.Br(),html.Br(),                                                    
-
-
-                                                # html.H3("Grouping:"),                                                
-
-                                                # html.Div(
-                                                #     className="div-for-dropdown",
-                                                #     children=[
-                                                #     # Dropdown for clinical T-Stage
-                                                #     dcc.Dropdown(
-                                                #         id="group-box",
-                                                #         options=[
-                                                            
-                                                #                 {"label": col, "value": col}
-                                                #                 for col in sorted(df.select_dtypes(include='object')) 
-                                                #         ],
-                                                #         value="Histology Category",
-                                                #         style=  {'borderColor': 'red', 'borderWidth': '3px'},
-                                                #     )],
-                                                # ),                                                     
-
-                                                html.Br(),                                                
-
-                                            ],
-                                        ),                                                    
-                                    ],
-                                ), 
                             ]),
 
                             dcc.Tab(
@@ -780,8 +743,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[                        
 
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("Y-axis:"),
 
@@ -829,7 +791,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[
 
-                                                html.Br(),html.Br(),html.Br(),                                                    
+                                                html.Br(),html.Br(),                                                    
 
 
                                                 # html.H3("Grouping:"),                                                
@@ -884,44 +846,10 @@ app.layout = html.Div(
                                 selected_style={'padding': '12px 18px'},
                                 children=[
 
-                                # Column for left controls
-                                html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
-                                    children=[
-
-                                        # Change to side-by-side for mobile layout
-                                        html.Div(
-                                            className="row",
-                                            children=[                        
-
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-                                                html.Br(),html.Br(),html.Br(),html.Br(),
-
-                                                # html.H3("Y-axis:"),
-
-                                                # html.Div(
-                                                #     className="div-for-dropdown",
-                                                #     children=[
-                                                #         # Dropdown for clinical T-Stage
-                                                #         dcc.Dropdown(
-                                                #             id="y-box",
-                                                #             options=[
-                                                #                 {"label": col, "value": col}
-                                                #                 for col in df.select_dtypes(include=np.number)
-                                                #             ],
-                                                #             value="V12 Skin Total ",
-                                                #             style=  {'borderColor': 'red', 'borderWidth': '3px'},
-                                                #         )
-                                                #     ],
-                                                # ),
-                                            ]
-                                        )
-                                    ]
-                                ),
 
                                 # Middle Graph
                                 html.Div(
-                                    className="six columns div-for-charts bg-grey",
+                                    className="twelve columns div-for-charts bg-grey",
                                     children=[        
                                         html.Br(),
 
@@ -942,27 +870,6 @@ app.layout = html.Div(
                                     ]
                                 ),
 
-                                # Right controls
-                                html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
-                                    children=[
-
-                                        # Change to side-by-side for mobile layout
-                                        html.Div(
-                                            className="row",
-                                            children=[
-
-                                                html.Br(),html.Br(),html.Br(),                                                    
-
-
-                                                
-
-                                                html.Br(),                                                
-
-                                            ],
-                                        ),                                                    
-                                    ],
-                                ), 
                             ]), 
 
                             dcc.Tab(
@@ -985,7 +892,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[
 
-                                                html.Br(),html.Br(),html.Br(), 
+                                                html.Br(),html.Br(), 
 
                                                 # Change to side-by-side for mobile layout
                                                 html.Div(
@@ -1034,7 +941,7 @@ app.layout = html.Div(
                                             className="row",
                                             children=[
 
-                                                html.Br(),html.Br(),html.Br(),
+                                                html.Br(),html.Br(),
 
                                                 html.H3("# of Wound Complication Patients:"),
 
@@ -1226,7 +1133,9 @@ def parse_contents(contents, filename):
         return df.to_dict('records'), html.Div([
             html.H4(f"Successfully uploaded: {filename}"),
             html.P(f"Data contains {len(df)} rows and {len(df.columns)} columns"),
-            html.H5("Next: Select field types below")
+            html.P("✓ Automatic field type detection completed"),
+            html.P("✓ Default visualization values have been set"),
+            html.H5("Next: Review field types below and start exploring your data!")
         ])
     except Exception as e:
         return None, html.Div([
@@ -1250,12 +1159,27 @@ def determine_field_types(data):
     categorical_cols = []
     
     for col in df.columns:
-        # Try to convert to numeric
+        # Try to convert to numeric with improved logic
         try:
-            pd.to_numeric(df[col], errors='raise')
-            numerical_cols.append(col)
+            # Use the improved convert_to_numeric function
+            numeric_data = convert_to_numeric(df, col)
+            # Check if we have enough valid numeric values (at least 50% or minimum 3 values)
+            valid_count = numeric_data.notna().sum()
+            total_count = len(numeric_data)
+            
+            if valid_count >= max(3, total_count * 0.5):
+                numerical_cols.append(col)
+            else:
+                categorical_cols.append(col)
         except:
             categorical_cols.append(col)
+    
+    # Ensure we have at least some columns of each type for plotting
+    if not numerical_cols and categorical_cols:
+        # If no numerical columns found, try to make the first categorical column numerical
+        if categorical_cols:
+            first_cat = categorical_cols.pop(0)
+            numerical_cols.append(first_cat)
     
     return {
         'numerical': numerical_cols,
@@ -1489,6 +1413,9 @@ layout = go.Layout(
     zerolinecolor='black', 
     zeroline=True,
     gridcolor= 'rgba(0.5,0.5,0.5,0.2)',
+    linecolor='black',
+    linewidth=2,
+    mirror=True,
 ),
     yaxis=dict(
     showgrid=True,
@@ -1498,11 +1425,27 @@ layout = go.Layout(
     zerolinewidth=5,
     showticklabels=True,
     gridcolor= 'rgba(0.5,0.5,0.5,0.2)',
+    linecolor='black',
+    linewidth=2,
+    mirror=True,
 ),
     plot_bgcolor="white",
     paper_bgcolor="white",
     height=600,
-    margin=go.layout.Margin(l=0, r=0, t=0, b=0),
+    margin=go.layout.Margin(l=50, r=50, t=50, b=50),
+    # Add border around the entire plot area
+    shapes=[
+        dict(
+            type="rect",
+            xref="paper", yref="paper",
+            x0=0, y0=0, x1=1, y1=1,
+            line=dict(
+                color="rgba(39, 116, 174, 0.8)",
+                width=3,
+            ),
+            fillcolor="rgba(0,0,0,0)",
+        )
+    ]
 )
 
 # max marker size
@@ -1513,7 +1456,25 @@ def convert_to_numeric(data, column):
     if column == 'Wound Toxicity Acute':
         out = data[column].str.extract(r'(\d+)$').astype(float)
         return out[0]
-    return pd.to_numeric(data[column], errors='coerce')
+    
+    # Try to convert to numeric, handling various edge cases
+    try:
+        # First try direct conversion
+        result = pd.to_numeric(data[column], errors='coerce')
+        
+        # If all values are NaN but the column has data, try string extraction
+        if result.isna().all() and not data[column].isna().all():
+            # Try to extract numbers from strings
+            string_data = data[column].astype(str)
+            # Extract first number found in each cell
+            extracted = string_data.str.extract(r'([-+]?\d*\.?\d+)').astype(float)
+            if not extracted[0].isna().all():
+                result = extracted[0]
+        
+        return result
+    except:
+        # If all else fails, return a series of NaN values with the same index
+        return pd.Series([np.nan] * len(data), index=data.index)
 
 # Scatter plot callback
 @app.callback(
@@ -1566,25 +1527,67 @@ def compute(xAxis, yAxis, colorAxis, sizeAxis, dataInds, uploaded_data):
         )
         return fig
 
-    # Convert all selected columns to numeric
+    # Convert X and Y to numeric (required)
     x_data = convert_to_numeric(data, xAxis)
     y_data = convert_to_numeric(data, yAxis)
-    color_data = convert_to_numeric(data, colorAxis)
-    size_data = convert_to_numeric(data, sizeAxis)
+    
+    # Handle color axis (categorical and numeric)
+    if colorAxis in data.columns:
+        color_values = data[colorAxis]
+        # Convert categorical to numeric for plotting
+        if color_values.dtype == 'object' or pd.api.types.is_categorical_dtype(color_values):
+            unique_colors = color_values.dropna().unique()
+            color_map = {val: i for i, val in enumerate(unique_colors)}
+            color_data = color_values.map(color_map).astype(float)
+            # Scale colors to use full colorscale range for better distinction
+            if len(unique_colors) > 1:
+                color_data = color_data * 10  # Spread out color values more
+        else:
+            color_data = convert_to_numeric(data, colorAxis)
+    else:
+        color_data = pd.Series([0] * len(data), index=data.index)
+    
+    # Handle size axis (categorical and numeric)
+    if sizeAxis in data.columns:
+        size_values = data[sizeAxis]
+        # Convert categorical to numeric for plotting
+        if size_values.dtype == 'object' or pd.api.types.is_categorical_dtype(size_values):
+            unique_sizes = size_values.dropna().unique()
+            # Map to distinct size values instead of just indices
+            size_map = {val: 6 + i * 3 for i, val in enumerate(unique_sizes)}  # Start at 6, increment by 3
+            size_data = size_values.map(size_map).astype(float)
+        else:
+            size_data = convert_to_numeric(data, sizeAxis)
+    else:
+        size_data = pd.Series([6] * len(data), index=data.index)  # Default size
 
-    # Create mask for valid numeric values
-    valid_mask = ~(x_data.isna() | y_data.isna() | color_data.isna() | size_data.isna())
+    # Create mask for valid numeric values - only require X and Y to be valid
+    valid_mask = ~(x_data.isna() | y_data.isna())
     
     if valid_mask.empty or not valid_mask.any():
-        fig = go.Figure(layout=layout)
-        fig.add_annotation(
-            text="No valid numeric data points available for the selected variables",
-            x=0.5, y=0.5,
-            xref="paper", yref="paper",
-            showarrow=False,
-            font=dict(size=20, color=uclaBlue)
-        )
-        return fig
+        # Try a more permissive approach - accept if we have any X or Y values
+        x_valid = ~x_data.isna()
+        y_valid = ~y_data.isna()
+        
+        if x_valid.any() and y_valid.any():
+            # Create a mask that accepts rows where both X and Y are valid
+            valid_mask = x_valid & y_valid
+            if not valid_mask.any():
+                # Fill missing values with mean of available data
+                x_data = x_data.fillna(x_data.mean())
+                y_data = y_data.fillna(y_data.mean())
+                valid_mask = ~(x_data.isna() | y_data.isna())
+        
+        if not valid_mask.any():
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="No valid numeric data points available for X and Y axes",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=20, color=uclaBlue)
+            )
+            return fig
 
     # Filter data using the mask
     x_data = x_data[valid_mask]
@@ -1592,6 +1595,10 @@ def compute(xAxis, yAxis, colorAxis, sizeAxis, dataInds, uploaded_data):
     color_data = color_data[valid_mask]
     size_data = size_data[valid_mask]
     patient_ids = data.index[valid_mask]
+
+    # Fill any remaining NaN values in color/size data
+    color_data = color_data.fillna(0)
+    size_data = size_data.fillna(1)
 
     # Normalize size data to reasonable values
     size_min, size_max = np.nanmin(size_data), np.nanmax(size_data)
@@ -1615,7 +1622,12 @@ def compute(xAxis, yAxis, colorAxis, sizeAxis, dataInds, uploaded_data):
                 sizeref=2 * max(normalized_sizes)/(maxSize**2),
                 sizemin=1,
                 colorbar=dict(thickness=40),
-                opacity=0.4,
+                colorscale='Viridis',  # Better color scale for distinction
+                opacity=0.7,
+                line=dict(
+                    width=2,
+                    color='rgba(39, 116, 174, 0.8)'
+                )
             ),
             customdata=np.stack((xLabels, yLabels, colorLabels, color_data, sizeLabels, size_data, patient_ids), axis=-1),
             hoverinfo='none'
@@ -1787,30 +1799,51 @@ def display_histo(marginal, xAxis, groupAxis, dataInds, uploaded_data):
         plot_bgcolor="white",
         paper_bgcolor="white",
         height=800,
+        margin=go.layout.Margin(l=50, r=50, t=50, b=50),
         yaxis=dict(
             showgrid=True,
             tickfont=dict(size=15,color='black'),
             showticklabels=True,
             gridcolor= 'rgba(0.5,0.5,0.5,0.2)',
             title='',
+            linecolor='black',
+            linewidth=2,
+            mirror=True,
         ),
         xaxis=dict(
             showgrid=True,
             tickfont=dict(size=15,color='black'),
             gridcolor= 'rgba(0.5,0.5,0.5,0.2)',
-            categoryorder="category ascending"
+            categoryorder="category ascending",
+            linecolor='black',
+            linewidth=2,
+            mirror=True,
         ),
         legend_font=dict(
             size=15,
         ),
         legend=dict(
-            borderwidth=2,
+            borderwidth=3,
             bordercolor=uclaBlue,
+            bgcolor='rgba(255,255,255,0.9)',
         ),
         font=dict(
             size=20,
             color=uclaBlue,
         ),
+        # Add border around the entire plot area
+        shapes=[
+            dict(
+                type="rect",
+                xref="paper", yref="paper",
+                x0=0, y0=0, x1=1, y1=1,
+                line=dict(
+                    color="rgba(39, 116, 174, 0.8)",
+                    width=3,
+                ),
+                fillcolor="rgba(0,0,0,0)",
+            )
+        ]
     )
 
     return fig
@@ -1934,8 +1967,9 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
             size=15,
         ),
         legend=dict(
-            borderwidth=2,
+            borderwidth=3,
             bordercolor=uclaBlue,
+            bgcolor='rgba(255,255,255,0.9)',
         ),
         font=dict(
             size=20,
@@ -2021,6 +2055,42 @@ def display_surv(yAxis, dataInds, uploaded_data):
         events = events.map(d)
         events = events.fillna(0)
         events = events[times>0]
+
+        # Check if we have valid data for survival analysis
+        if len(fuDays) == 0 or len(events) == 0 or len(fuDays) != len(events):
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="Insufficient data for survival analysis. Please check your date columns and survival data.",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return fig, 'Days: No valid data', 'Patients: 0', 'Events: 0'
+        
+        # Ensure data is numeric and valid
+        try:
+            fuDays = pd.to_numeric(fuDays, errors='coerce').dropna()
+            events = pd.to_numeric(events, errors='coerce').dropna()
+            
+            # Align indices
+            common_indices = fuDays.index.intersection(events.index)
+            fuDays = fuDays.loc[common_indices]
+            events = events.loc[common_indices]
+            
+            if len(fuDays) == 0 or len(events) == 0:
+                raise ValueError("No valid survival data after cleaning")
+                
+        except Exception as e:
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text=f"Error processing survival data: {str(e)}",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return fig, 'Days: Data error', 'Patients: 0', 'Events: 0'
 
         # fit the KM and plot 
         km = KaplanMeierFitter()
@@ -2136,9 +2206,45 @@ def display_surv(yAxis, dataInds, uploaded_data):
 
         # code event as death if occurred prior to local recurrence
         for ptInd in deaths.index:
-            if events.loc[ptInd] == 0:
+            if events.index.isin([ptInd]).any() and events.loc[ptInd] == 0:
                 events[ptInd] = 2
                 fuDays[ptInd] = deathDays[ptInd]
+
+        # Check if we have valid data for survival analysis
+        if len(fuDays) == 0 or len(events) == 0 or len(fuDays) != len(events):
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="Insufficient data for local failure analysis. Please check your date columns and recurrence data.",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return fig, 'Days: No valid data', 'Patients: 0', 'Events: 0'
+        
+        # Ensure data is numeric and valid
+        try:
+            fuDays = pd.to_numeric(fuDays, errors='coerce').dropna()
+            events = pd.to_numeric(events, errors='coerce').dropna()
+            
+            # Align indices
+            common_indices = fuDays.index.intersection(events.index)
+            fuDays = fuDays.loc[common_indices]
+            events = events.loc[common_indices]
+            
+            if len(fuDays) == 0 or len(events) == 0:
+                raise ValueError("No valid local failure data after cleaning")
+                
+        except Exception as e:
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text=f"Error processing local failure data: {str(e)}",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return fig, 'Days: Data error', 'Patients: 0', 'Events: 0'
 
         # fit the KM and plot 
         km = KaplanMeierFitter()
@@ -2261,7 +2367,43 @@ def display_surv(yAxis, dataInds, uploaded_data):
                     events[ptInd] = 2
                     fuDays[ptInd] = deathDays[ptInd]
 
-        # fit the KM and plot 
+        # Check if we have valid data for survival analysis
+        if len(fuDays) == 0 or len(events) == 0 or len(fuDays) != len(events):
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="Insufficient data for distant failure analysis. Please check your date columns and recurrence data.",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return fig, 'Days: No valid data', 'Patients: 0', 'Events: 0'
+        
+        # Ensure data is numeric and valid
+        try:
+            fuDays = pd.to_numeric(fuDays, errors='coerce').dropna()
+            events = pd.to_numeric(events, errors='coerce').dropna()
+            
+            # Align indices
+            common_indices = fuDays.index.intersection(events.index)
+            fuDays = fuDays.loc[common_indices]
+            events = events.loc[common_indices]
+            
+            if len(fuDays) == 0 or len(events) == 0:
+                raise ValueError("No valid distant failure data after cleaning")
+                
+        except Exception as e:
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text=f"Error processing distant failure data: {str(e)}",
+                x=0.5, y=0.5,
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return fig, 'Days: Data error', 'Patients: 0', 'Events: 0'
+
+        # fit the KM and plot
         km = KaplanMeierFitter()
         ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
         # km.fit(durations=fuDays, event_observed=events, label="Group 1")
@@ -2750,90 +2892,149 @@ def update_3d_plot(x_col, y_col, z_col, color_col, size_col, uploaded_data):
             showarrow=False,
         )
 
-    # Convert all selected columns to numeric
+    # Convert X, Y, Z to numeric (required for 3D positioning)
     x_data = convert_to_numeric(df, x_col)
     y_data = convert_to_numeric(df, y_col)
     z_data = convert_to_numeric(df, z_col)
-    color_data = convert_to_numeric(df, color_col)
-    size_data = convert_to_numeric(df, size_col)
+    
+    # Handle color and size differently for categorical vs numeric
+    # For color - if categorical, create distinct color mapping
+    if color_col in df.columns:
+        color_values = df[color_col]
+        if color_values.dtype == 'object' or pd.api.types.is_categorical_dtype(color_values):
+            # Categorical color: map unique values to distinct numbers
+            unique_colors = color_values.dropna().unique()
+            color_map = {val: i for i, val in enumerate(unique_colors)}
+            color_data = color_values.map(color_map).astype(float)
+            # Scale colors to use full colorscale range
+            if len(unique_colors) > 1:
+                color_data = color_data * (len(unique_colors) - 1) / max(1, color_data.max())
+        else:
+            color_data = convert_to_numeric(df, color_col)
+    else:
+        color_data = pd.Series([0] * len(df), index=df.index)
+    
+    # For size - if categorical, create distinct size mapping
+    if size_col in df.columns:
+        size_values = df[size_col]
+        if size_values.dtype == 'object' or pd.api.types.is_categorical_dtype(size_values):
+            # Categorical size: map unique values to distinct sizes
+            unique_sizes = size_values.dropna().unique()
+            size_map = {val: 8 + i * 4 for i, val in enumerate(unique_sizes)}  # Start at 8, increment by 4
+            size_data = size_values.map(size_map).astype(float)
+        else:
+            size_data = convert_to_numeric(df, size_col)
+    else:
+        size_data = pd.Series([8] * len(df), index=df.index)  # Default size
+    
     patient_ids = df.get('Enrolled Patient #', df.index)
 
-    # Create mask for valid numeric values
-    valid_mask = ~(x_data.isna() | y_data.isna() | z_data.isna() | color_data.isna() | size_data.isna())
+    # Create mask for valid numeric values - only require X, Y, Z to be valid
+    xyz_mask = ~(x_data.isna() | y_data.isna() | z_data.isna())
     
-    if not valid_mask.any():
-        return go.Figure().add_annotation(
-            text="No valid numeric data points available for the selected variables",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-        )
+    if not xyz_mask.any():
+        # Try a more permissive approach
+        x_valid = ~x_data.isna()
+        y_valid = ~y_data.isna()
+        z_valid = ~z_data.isna()
+        
+        if x_valid.any() and y_valid.any() and z_valid.any():
+            # Use rows where at least X, Y, Z have some valid data
+            xyz_mask = x_valid & y_valid & z_valid
+            if not xyz_mask.any():
+                # Fill missing values for X, Y, Z with their means
+                x_data = x_data.fillna(x_data.mean())
+                y_data = y_data.fillna(y_data.mean())
+                z_data = z_data.fillna(z_data.mean())
+                xyz_mask = ~(x_data.isna() | y_data.isna() | z_data.isna())
+        
+        if not xyz_mask.any():
+            return go.Figure().add_annotation(
+                text="No valid numeric data points available for X, Y, Z axes",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+            )
 
-    # Filter data using the mask
-    x_data = x_data[valid_mask]
-    y_data = y_data[valid_mask]
-    z_data = z_data[valid_mask]
-    color_data = color_data[valid_mask]
-    size_data = size_data[valid_mask]
-    patient_ids = patient_ids[valid_mask]
+    # Filter data using the XYZ mask and handle color/size separately
+    x_data = x_data[xyz_mask]
+    y_data = y_data[xyz_mask]
+    z_data = z_data[xyz_mask]
+    color_data = color_data[xyz_mask].fillna(0)  # Fill missing color with default
+    size_data = size_data[xyz_mask].fillna(8)    # Fill missing size with default size
+    patient_ids = patient_ids[xyz_mask]
 
     # Store original size values for tooltip
     original_sizes = size_data.copy()
 
-    # Handle any remaining NaN values in size data
-    size_data = np.nan_to_num(size_data, nan=4.0)  # Replace NaN with minimum size
-
-    # Normalize size data to reasonable values (between 4 and 8)
-    size_min, size_max = np.nanmin(size_data), np.nanmax(size_data)
-    if size_min == size_max or np.all(np.isclose(size_data, size_min)):
-        normalized_sizes = np.full_like(size_data, 4.0)  # If all values are the same, use minimum size
+    # For categorical size data, don't normalize - use the mapped values directly
+    # For numeric size data, normalize to reasonable range
+    if size_col in df.columns:
+        size_values = df[size_col]
+        if size_values.dtype == 'object' or pd.api.types.is_categorical_dtype(size_values):
+            # Use categorical sizes directly (already mapped to distinct values)
+            normalized_sizes = size_data
+        else:
+            # Normalize numeric size data to reasonable values (between 4 and 12)
+            size_min, size_max = np.nanmin(size_data), np.nanmax(size_data)
+            if size_min == size_max or np.all(np.isclose(size_data, size_min)):
+                normalized_sizes = np.full_like(size_data, 8.0)  # If all values are the same, use default size
+            else:
+                normalized_sizes = 4 + 8 * (size_data - size_min) / (size_max - size_min)
     else:
-        normalized_sizes = 4 + 4 * (size_data - size_min) / (size_max - size_min)
+        normalized_sizes = np.full_like(size_data, 8.0)  # Default size
 
-    # Create the 3D scatter plot
-    fig = go.Figure()
+    xLabels = np.repeat(x_col, len(x_data))
+    yLabels = np.repeat(y_col, len(y_data))
+    zLabels = np.repeat(z_col, len(z_data))
+    colorLabels = np.repeat(color_col, len(color_data))
 
-    # Add scatter points
-    fig.add_trace(go.Scatter3d(
-        x=x_data,
-        y=y_data,
-        z=z_data,
-        mode='markers',
-        marker=dict(
-            size=normalized_sizes,
-            color=color_data,
-            colorscale='Jet',
-            opacity=0.8,
-            colorbar=dict(thickness=20),
-        ),
-        line=dict(
-            color='black',
-            width=2,
-        ),
-        text=patient_ids,
-        customdata=np.stack((original_sizes, color_data), axis=-1),
-        hoverinfo='none'
-    ))
+    scatterFig = go.Figure(layout=layout)
+    scatterFig.add_trace(
+        go.Scatter3d(
+            x=x_data,
+            y=y_data,
+            z=z_data,
+            mode='markers',
+            marker=dict(
+                size=normalized_sizes,
+                color=color_data,
+                colorscale='Viridis',
+                opacity=0.8,
+                colorbar=dict(thickness=20),
+                line=dict(
+                    width=1,
+                    color='black'
+                )
+            ),
+            text=patient_ids,
+            customdata=np.stack((original_sizes, color_data), axis=-1),
+            hoverinfo='none'
+        )
+    )
 
-    # Update the layout
-    fig.update_layout(
+    # Update the layout for 3D
+    scatterFig.update_layout(
         scene=dict(
             xaxis=dict(
                 title=x_col,
                 gridcolor="white",
                 showbackground=True,
+                backgroundcolor="rgb(230, 230,230)",
             ),
             yaxis=dict(
                 title=y_col,
                 gridcolor="white",
                 showbackground=True,
+                backgroundcolor="rgb(230, 230,230)",
             ),
             zaxis=dict(
                 title=z_col,
                 gridcolor="white",
                 showbackground=True,
+                backgroundcolor="rgb(230, 230,230)",
             ),
             camera=dict(
                 up=dict(x=0, y=0, z=1),
@@ -2841,7 +3042,7 @@ def update_3d_plot(x_col, y_col, z_col, color_col, size_col, uploaded_data):
                 eye=dict(x=1.5, y=1.5, z=1.5)
             ),
         ),
-        margin=dict(l=0, r=0, b=0, t=30),
+        margin=dict(l=50, r=50, b=50, t=80),
         showlegend=False,
         title=dict(
             text=f"3D Patient Data Visualization (n={len(x_data)})",
@@ -2853,7 +3054,7 @@ def update_3d_plot(x_col, y_col, z_col, color_col, size_col, uploaded_data):
         hovermode='closest',
     )
 
-    return fig
+    return scatterFig
 
 @app.callback(
     Output("3d-tooltip", "show"),
@@ -3039,74 +3240,122 @@ def update_table_filters(data, field_types):
 
 # Scatter plot dropdowns
 @app.callback(
-    Output('x-dropdown', 'options'),
-    Output('y-dropdown', 'options'),
-    Output('color-dropdown', 'options'),
-    Output('size-dropdown', 'options'),
+    [Output('x-dropdown', 'options'),
+     Output('y-dropdown', 'options'),
+     Output('color-dropdown', 'options'),
+     Output('size-dropdown', 'options'),
+     Output('x-dropdown', 'value'),
+     Output('y-dropdown', 'value'),
+     Output('color-dropdown', 'value'),
+     Output('size-dropdown', 'value')],
     [Input('field-types', 'data')]
 )
 def update_scatter_dropdowns(field_types):
     if not field_types:
-        return [], [], [], []
+        return [], [], [], [], None, None, None, None
+    
     num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
     cat_options = [{'label': col, 'value': col} for col in field_types['categorical']]
-    return num_options, num_options, cat_options, cat_options
+    
+    # Set default values if available
+    x_default = field_types['numerical'][0] if field_types['numerical'] else None
+    y_default = field_types['numerical'][1] if len(field_types['numerical']) > 1 else field_types['numerical'][0] if field_types['numerical'] else None
+    color_default = field_types['categorical'][0] if field_types['categorical'] else None
+    size_default = field_types['categorical'][1] if len(field_types['categorical']) > 1 else field_types['categorical'][0] if field_types['categorical'] else None
+    
+    return num_options, num_options, cat_options, cat_options, x_default, y_default, color_default, size_default
 
 # Histogram plot dropdowns
 @app.callback(
-    Output('x-histo', 'options'),
-    Output('group-histo', 'options'),
+    [Output('x-histo', 'options'),
+     Output('group-histo', 'options'),
+     Output('x-histo', 'value'),
+     Output('group-histo', 'value')],
     [Input('field-types', 'data')]
 )
 def update_histogram_dropdowns(field_types):
     if not field_types:
-        return [], []
+        return [], [], None, None
+    
     num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
     cat_options = [{'label': col, 'value': col} for col in field_types['categorical']]
-    return num_options, cat_options
+    
+    # Set default values if available
+    x_default = field_types['numerical'][0] if field_types['numerical'] else None
+    group_default = field_types['categorical'][0] if field_types['categorical'] else None
+    
+    return num_options, cat_options, x_default, group_default
 
 # Box plot dropdowns
 @app.callback(
-    Output('x-box', 'options'),
-    Output('y-box', 'options'),
+    [Output('x-box', 'options'),
+     Output('y-box', 'options'),
+     Output('x-box', 'value'),
+     Output('y-box', 'value')],
     [Input('field-types', 'data')]
 )
 def update_box_dropdowns(field_types):
     if not field_types:
-        return [], []
+        return [], [], None, None
+    
     num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
-    return num_options, num_options
+    
+    # Set default values if available
+    x_default = field_types['numerical'][0] if field_types['numerical'] else None
+    y_default = field_types['numerical'][1] if len(field_types['numerical']) > 1 else field_types['numerical'][0] if field_types['numerical'] else None
+    
+    return num_options, num_options, x_default, y_default
 
 # Survival plot dropdown
 @app.callback(
-    Output('y-surv', 'options'),
+    [Output('y-surv', 'options'),
+     Output('y-surv', 'value')],
     [Input('field-types', 'data')]
 )
 def update_survival_dropdown(field_types):
     if not field_types:
-        return []
-    # Fixed survival outcome options
-    return [
+        return [], None
+    
+    # Return predefined survival options with default
+    survival_options = [
         {'label': 'Overall Survival', 'value': 'Overall Survival'},
         {'label': 'Local Failure', 'value': 'Local Failure'},
         {'label': 'Distant Failure', 'value': 'Distant Failure'}
     ]
+    
+    default_value = 'Overall Survival'  # Set default to Overall Survival
+    
+    return survival_options, default_value
 
 # 3D plot dropdowns
 @app.callback(
-    Output('x-3d-dropdown', 'options'),
-    Output('y-3d-dropdown', 'options'),
-    Output('z-3d-dropdown', 'options'),
-    Output('color-3d-dropdown', 'options'),
-    Output('size-3d-dropdown', 'options'),
+    [Output('x-3d-dropdown', 'options'),
+     Output('y-3d-dropdown', 'options'),
+     Output('z-3d-dropdown', 'options'),
+     Output('color-3d-dropdown', 'options'),
+     Output('size-3d-dropdown', 'options'),
+     Output('x-3d-dropdown', 'value'),
+     Output('y-3d-dropdown', 'value'),
+     Output('z-3d-dropdown', 'value'),
+     Output('color-3d-dropdown', 'value'),
+     Output('size-3d-dropdown', 'value')],
     [Input('field-types', 'data')]
 )
 def update_3d_dropdowns(field_types):
     if not field_types:
-        return [], [], [], [], []
+        return [], [], [], [], [], None, None, None, None, None
+    
     num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
     cat_options = [{'label': col, 'value': col} for col in field_types['categorical']]
-    return num_options, num_options, num_options, cat_options, cat_options
+    
+    # Set default values if available
+    x_default = field_types['numerical'][0] if field_types['numerical'] else None
+    y_default = field_types['numerical'][1] if len(field_types['numerical']) > 1 else field_types['numerical'][0] if field_types['numerical'] else None
+    z_default = field_types['numerical'][2] if len(field_types['numerical']) > 2 else field_types['numerical'][0] if field_types['numerical'] else None
+    color_default = field_types['categorical'][0] if field_types['categorical'] else None
+    size_default = field_types['categorical'][1] if len(field_types['categorical']) > 1 else field_types['categorical'][0] if field_types['categorical'] else None
+    
+    return num_options, num_options, num_options, cat_options, cat_options, x_default, y_default, z_default, color_default, size_default
 
 # set the pandas dataframe to be datatable and update patient count display 
 @app.callback(
@@ -3125,6 +3374,18 @@ def update_patient_count_display(dataInds, uploaded_data):
         return f"({len(df)} patients)"
     else:
         return f"({len(dataInds)} patients)"
+
+# Total patient count callback  
+@app.callback(
+    Output('total-patient-count-display', 'children'),
+    [Input('uploaded-data', 'data')]
+)
+def update_total_patient_count_display(uploaded_data):    
+    if uploaded_data is None:
+        return "No data uploaded"
+    
+    df = pd.DataFrame(uploaded_data)
+    return f"({len(df)} patients)"
 
 # Save field types callback - update to use the store
 @app.callback(
