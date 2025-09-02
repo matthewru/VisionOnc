@@ -526,7 +526,7 @@ app.layout = html.Div(
                                 
                                 # Column for left controls
                                 html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
+                                    className="two columns div-user-controls bg-grey-copy",
                                     children=[
 
                                         # Change to side-by-side for mobile layout
@@ -564,11 +564,11 @@ app.layout = html.Div(
 
                                 # Middle Graph
                                 html.Div(
-                                    className="six columns div-for-charts bg-grey",
+                                    className="eight columns div-for-charts bg-grey",
                                     children=[        
                                         html.Br(),
 
-                                        dcc.Graph(id="histo-plot"),
+                                        dcc.Graph(id="histo-plot", style={"width": "100%"}),
 
                                         html.H3("X-axis:"),
 
@@ -592,7 +592,8 @@ app.layout = html.Div(
 
                                 # Right controls
                                 html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
+                                    className="two columns div-user-controls bg-grey-copy",
+                                    style={'padding': '16px 20px', 'whiteSpace': 'normal', 'wordBreak': 'break-word', 'overflow': 'visible', 'maxWidth': '100%'},
                                     children=[
 
                                         # Change to side-by-side for mobile layout
@@ -612,7 +613,9 @@ app.layout = html.Div(
                                                             id='dist-marginal',
                                                             options=[{'label': x, 'value': x.lower()} 
                                                                         for x in ['Box', 'Violin', 'Rug']],
-                                                            value='box'
+                                                            value='box',
+                                                            labelStyle={'display': 'inline-block', 'marginRight': 8},
+                                                            style={'display': 'flex', 'flexWrap': 'wrap', 'gap': '8px'}
                                                         ), 
                                                     ]
                                                 ),                                                      
@@ -631,7 +634,7 @@ app.layout = html.Div(
                                                         value=None,
                                                         style=  {'borderColor': 'red', 'borderWidth': '3px'},
                                                     )],
-                                                ),                                                     
+                                                ),                                                      
 
                                                 html.Br(),                                                
 
@@ -974,10 +977,65 @@ app.layout = html.Div(
                                     ],
                                 ), 
                             ]),  
-                            
                             dcc.Tab(
                                 id="tab-10",
                                 value="tab-10",
+                                label='Imaging', 
+                                className='custom-tab', 
+                                selected_className='custom-tab--selected',
+                                style={'padding': '12px 18px'},
+                                selected_style={'padding': '12px 18px'},
+                                children=[
+
+                                # Plane selection at the top (horizontal)
+                                html.Div(
+                                    className="row",
+                                    children=[
+                                        html.Div(
+                                            className="twelve columns div-user-controls bg-grey-copy",
+                                            children=[
+                                                html.Div(
+                                                    className="row",
+                                                    children=[
+                                                        html.Br(),
+                                                        html.H3("Plane:", style={'textAlign': 'center', 'marginBottom': '10px'}),
+                                                        html.Div(
+                                                            className="div-for-dropdown",
+                                                            style={'padding': '10px 20px', 'textAlign': 'center'},
+                                                            children=[
+                                                                dcc.RadioItems(
+                                                                    id='imaging-plane',
+                                                                    options=[{'label': x, 'value': x} 
+                                                                                for x in ['Axial', 'Coronal', 'Sagittal']],
+                                                                    value='Coronal',
+                                                                    labelStyle={'display': 'inline-block', 'margin': '0 20px'},
+                                                                    style={'fontSize': '16px'}
+                                                                ), 
+                                                            ]
+                                                        ),
+                                                        html.Br(),
+                                                    ],
+                                                ),                                                    
+                                            ],
+                                        ),
+                                    ],
+                                ),    
+
+                                # Full-width imaging plot
+                                html.Div(
+                                    className="twelve columns div-for-charts bg-grey",
+                                    children=[        
+                                        html.Br(),
+                                        html.H4("RT Imaging"),                                       
+                                        dcc.Graph(id="imaging-plot"),
+                                        html.Br(),
+                                    ]
+                                ),
+
+                            ]),
+                            dcc.Tab(
+                                id="tab-11",
+                                value="tab-11",
                                 label='3D Visualization', 
                                 className='custom-tab', 
                                 selected_className='custom-tab--selected',
@@ -1270,7 +1328,7 @@ def show_field_selection(field_types, uploaded_data):
         dash_table.DataTable(
             id='field-type-table',
             columns=[
-                {'name': 'Field Name', 'id': 'Field Name', 'editable': False},
+                {'name': 'Field Name', 'id': 'Field Name', 'editable': False, 'selectable': True},
                 {'name': 'Type', 'id': 'Type', 'presentation': 'dropdown'},
                 {'name': 'Sample Values', 'id': 'Sample Values', 'editable': False},
             ],
@@ -1666,40 +1724,125 @@ def display_hover(hoverData, x_axis, y_axis, color_axis, size_axis):
     if isinstance(size_val, (int, float)):
         size_val = f"{size_val:.2f}"
 
-    # Create a div with the patient info
-    children = [
-        html.Div([
-            html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+    try:
+        # Create paths for each image
+        basePath = 'assets/Captures_Nums_small/'
+        axial_path = basePath + str(pt_id) + '/Axial.tiff'
+        coronal_path = basePath + str(pt_id) + '/Coronal.tiff'
+        sagittal_path = basePath + str(pt_id) + '/Sagittal.tiff'
+
+        # Load and process images using PIL
+        def load_and_resize_image(path):
+            try:
+                photo = Image.open(path).convert("RGBA")
+                photo = photo.resize((50, 50))  # Using the same size as 3D tooltip
+                # Convert to base64
+                buffered = io.BytesIO()
+                photo.save(buffered, format="PNG")
+                return base64.b64encode(buffered.getvalue()).decode()
+            except Exception as e:
+                print(f"Error loading image {path}: {str(e)}")
+                return None
+
+        axial_img = load_and_resize_image(axial_path)
+        coronal_img = load_and_resize_image(coronal_path)
+        sagittal_img = load_and_resize_image(sagittal_path)
+
+        # Create a div with the patient info and images
+        children = [
             html.Div([
-                html.P([
-                    html.Strong(f"{x_axis}: "),
-                    f"{x_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{y_axis}: "),
-                    f"{y_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{color_axis}: "),
-                    f"{color_val}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{size_axis}: "),
-                    f"{size_val}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-            ], style={'marginBottom': '5px'}),
-        ], style={
-            'backgroundColor': 'white',
-            'padding': '5px',
-            'border': '1px solid red',
-            'borderRadius': '3px',
-            'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-            'zIndex': '10000',
-            'position': 'absolute',
-            'pointerEvents': 'none'
-        })
-    ]
-    return True, bbox, children
+                html.Div([
+                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                    html.Div([
+                        html.P([
+                            html.Strong(f"{x_axis}: "),
+                            f"{x_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{y_axis}: "),
+                            f"{y_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{color_axis}: "),
+                            f"{color_val}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{size_axis}: "),
+                            f"{size_val}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                    ], style={'marginBottom': '5px'}),
+                ], style={'marginBottom': '5px'}),
+                
+                # Images in a row
+                html.Div([
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                ], style={'textAlign': 'center'}),
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                'zIndex': '10000',
+                'position': 'absolute'
+            })
+        ]
+        return True, bbox, children
+    except Exception as e:
+        print(f"Error in tooltip: {str(e)}")
+        children = [
+            html.Div([
+                html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'fontSize': '14px'}),
+                html.P(f"{x_axis}: {x_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{y_axis}: {y_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{color_axis}: {color_val}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{size_axis}: {size_val}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"Error loading images: {str(e)}", style={'color': 'red', 'fontSize': '10px'})
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'zIndex': '1000',
+                'position': 'relative'
+            })
+        ]
+        return True, bbox, children
 
 # Histogram callback
 @app.callback(
@@ -1897,17 +2040,17 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
         )
         return fig
 
-    # Convert both axes to numeric
-    x_data = convert_to_numeric(data, xAxis)
+    # Treat X as categorical labels
+    x_data = data[xAxis].astype(str)
+    # Ensure Y is numeric
     y_data = convert_to_numeric(data, yAxis)
     
-    # Create mask for valid numeric values in both x and y data
-    valid_mask = ~(x_data.isna() | y_data.isna())
+    valid_mask = ~y_data.isna()
     
     if not valid_mask.any():
         fig = go.Figure(layout=layout)
         fig.add_annotation(
-            text="No valid numeric data points available for the selected variables",
+            text="No valid numeric data points available for the selected Y variable",
             x=0.5, y=0.5,
             xref="paper", yref="paper",
             showarrow=False,
@@ -1915,7 +2058,6 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
         )
         return fig
 
-    # Filter data using the mask
     x_data = x_data[valid_mask]
     y_data = y_data[valid_mask]
     patient_ids = data.index[valid_mask]
@@ -1930,8 +2072,8 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
             x=x_data,
             y=y_data,
             boxpoints='all',
-            jitter=0.5,  # Increased from 0.3
-            pointpos=-1.8,  # Increased from -1.5
+            jitter=0.5,
+            pointpos=-1.8,
             marker=dict(
                 outliercolor='rgba(250,0,0,0.7)',
                 line=dict(
@@ -1940,22 +2082,13 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
                 ),
             ),
             boxmean=True,
-            fillcolor='rgba(39, 116, 174, 0.3)',  # UCLA blue with transparency
+            fillcolor='rgba(39, 116, 174, 0.3)',
             line=dict(
-                color='rgba(39, 116, 174, 1)',  # Solid UCLA blue
+                color='rgba(39, 116, 174, 1)',
                 width=2
             ),
             customdata=np.stack((xLabels, yLabels, patient_ids), axis=-1),
             hoverinfo='none'
-            # hovertemplate="<br>".join([
-            #     "<b>%{x}</b><br>",
-            #     "Median: %{median:.2f}<br>",
-            #     "Q1: %{q1:.2f}<br>",
-            #     "Q3: %{q3:.2f}<br>",
-            #     "Min: %{lower:.2f}<br>",
-            #     "Max: %{upper:.2f}<br>",
-            #     "<extra></extra>",
-            # ])
         )
     )
 
@@ -2628,32 +2761,115 @@ def display_map_hover(hoverData):
     tumor_size = hover_data["customdata"][0]
     histology = hover_data["customdata"][1]
 
-    # Create a div with the patient info
-    children = [
-        html.Div([
-            html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+    try:
+        # Create paths for each image
+        basePath = 'assets/Captures_Nums_small/'
+        axial_path = basePath + str(pt_id) + '/Axial.tiff'
+        coronal_path = basePath + str(pt_id) + '/Coronal.tiff'
+        sagittal_path = basePath + str(pt_id) + '/Sagittal.tiff'
+
+        # Load and process images using PIL
+        def load_and_resize_image(path):
+            try:
+                photo = Image.open(path).convert("RGBA")
+                photo = photo.resize((50, 50))  # Using the same size as 3D tooltip
+                # Convert to base64
+                buffered = io.BytesIO()
+                photo.save(buffered, format="PNG")
+                return base64.b64encode(buffered.getvalue()).decode()
+            except Exception as e:
+                print(f"Error loading image {path}: {str(e)}")
+                return None
+
+        axial_img = load_and_resize_image(axial_path)
+        coronal_img = load_and_resize_image(coronal_path)
+        sagittal_img = load_and_resize_image(sagittal_path)
+
+        # Create a div with the patient info and images
+        children = [
             html.Div([
-                html.P([
-                    html.Strong("Tumor Size: "),
-                    f"{tumor_size}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong("Histology: "),
-                    f"{histology}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-            ], style={'marginBottom': '5px'}),
-        ], style={
-            'backgroundColor': 'white',
-            'padding': '5px',
-            'border': '1px solid red',
-            'borderRadius': '3px',
-            'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-            'zIndex': '10000',
-            'position': 'absolute',
-            'pointerEvents': 'none'
-        })
-    ]
-    return True, bbox, children
+                html.Div([
+                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                    html.Div([
+                        html.P([
+                            html.Strong("Tumor Size: "),
+                            f"{tumor_size}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong("Histology: "),
+                            f"{histology}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                    ], style={'marginBottom': '5px'}),
+                ], style={'marginBottom': '5px'}),
+                
+                # Images in a row
+                html.Div([
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                ], style={'textAlign': 'center'}),
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                'zIndex': '10000',
+                'position': 'absolute'
+            })
+        ]
+        return True, bbox, children
+    except Exception as e:
+        print(f"Error in tooltip: {str(e)}")
+        children = [
+            html.Div([
+                html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'fontSize': '14px'}),
+                html.P(f"Tumor Size: {tumor_size}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"Histology: {histology}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"Error loading images: {str(e)}", style={'color': 'red', 'fontSize': '10px'})
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'zIndex': '1000',
+                'position': 'relative'
+            })
+        ]
+        return True, bbox, children
 
 # swimmer plots
 @app.callback([
@@ -2688,7 +2904,7 @@ def display_swimmer(dataInds, uploaded_data):
     fig.update_layout(
         showlegend=False,
         plot_bgcolor="white",
-        margin=dict(t=10,l=10,b=10,r=10),
+        margin=dict(t=50,l=10,b=10,r=10),
     )
 
     # Look for potential date columns that could be used for swimmer plot
@@ -2857,6 +3073,118 @@ def display_swimmer(dataInds, uploaded_data):
     )
 
     return fig, str(numPts)
+
+# imaging plots
+@app.callback(
+    Output("imaging-plot", "figure"), 
+    [
+    Input('table-filters', 'derived_virtual_indices'),
+    Input("imaging-plane", "value"),
+    Input('uploaded-data', 'data')
+    ])
+def display_image(dataInds, imagePlane, uploaded_data):
+    
+    if uploaded_data is None:
+        # Return empty figure if no data uploaded
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Please upload data to view imaging",
+            x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False, font=dict(size=16)
+        )
+        fig.update_layout(
+            showlegend=False,
+            plot_bgcolor="white",
+            margin=dict(t=10,l=10,b=10,r=10),
+            hovermode=False,
+            width=800,
+            height=600,
+        )
+        return fig
+    
+    df = pd.DataFrame(uploaded_data)
+    
+    if dataInds is None:
+        data = df.copy()
+    else:
+        data = df.iloc[dataInds, :]
+
+    ## sort data
+    # data = data.loc[data['Major Wound Complications '] == 'Yes']
+    # data.sort_values(by='Days to Wound Close', inplace=True)    
+
+    # read in all patient images
+    basePath = 'assets/Captures_Nums_small/'    
+    imageType = imagePlane + '.tiff'
+    
+    numPts = len(data)
+    
+    # Create a more square-like grid by calculating optimal columns
+    # Aim for roughly square aspect ratio
+    numCols = max(6, int(np.ceil(np.sqrt(numPts))))  # More columns for better aspect ratio
+    numRows = int(np.ceil(numPts / numCols))
+    
+    # Larger images to fill more space
+    imgSizePx = 100  # Increased size
+    spacing = 8  # Tighter spacing to fit more images
+    
+    # Calculate total dimensions
+    totalWidth = (numCols * imgSizePx) + ((numCols - 1) * spacing)
+    totalHeight = (numRows * imgSizePx) + ((numRows - 1) * spacing)
+    
+    # make a single PIL image from all patient images
+    collage = Image.new("RGBA", (totalWidth, totalHeight), color=(255,255,255,255))    
+
+    c = 0
+    for row in range(numRows):
+        for col in range(numCols):
+            if c >= numPts:
+                break
+                
+            # Calculate position
+            x = col * (imgSizePx + spacing)
+            y = row * (imgSizePx + spacing)
+            
+            # 13, 14, 15, 16, 19, 24, 27, 35, 37, 86, 114, 147, 149, 151, 153 (MISSING FROM DATA)
+            # 13, 14, 15 ,16, 19, 24, 27, 35, 37, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161 (MISSING IMAGES)
+            # 86, 114 is missing from the data but has images (MISSING FROM DATA BUT HAS IMAGES)
+            ptID = data['Enrolled Patient #'].iloc[c]
+            imagePath = basePath + str(ptID) + '/' + imageType
+            file = imagePath
+            try:
+                photo = Image.open(file).convert("RGBA")
+                photo = photo.resize((imgSizePx, imgSizePx))        
+            except:
+                photo = Image.open('assets/imagePlaceholder.png').convert("RGBA")
+                photo = photo.resize((imgSizePx, imgSizePx))
+            
+            collage.paste(photo, (x, y))
+            c += 1
+            
+        if c >= numPts:
+            break
+
+    fig = px.imshow(collage)
+            
+    # hide and lock down axes
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+    
+    # Set aspect ratio to be more square-like and fill the space
+    fig.update_layout(
+        showlegend=False,
+        plot_bgcolor="white",
+        margin=dict(t=10,l=10,b=10,r=10),
+        hovermode=False,
+        # Set aspect ratio to be more square
+        width=totalWidth,
+        height=totalHeight,
+        # Ensure the plot fills the available space
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True, scaleanchor="x", scaleratio=1),
+    )    
+
+    return fig
+
 
 @app.callback(
     Output("3d-plot", "figure"),
@@ -3116,44 +3444,130 @@ def display_3d_hover(hoverData, x_axis, y_axis, z_axis, color_axis, size_axis, u
     if isinstance(size_val, (int, float)) and size_val != "N/A":
         size_val = f"{size_val:.2f}"
 
-    # Create a div with the patient info
-    children = [
-        html.Div([
-            html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+    try:
+        # Create paths for each image
+        basePath = 'assets/Captures_Nums_small/'
+        axial_path = basePath + str(pt_id) + '/Axial.tiff'
+        coronal_path = basePath + str(pt_id) + '/Coronal.tiff'
+        sagittal_path = basePath + str(pt_id) + '/Sagittal.tiff'
+
+        # Load and process images using PIL
+        def load_and_resize_image(path):
+            try:
+                photo = Image.open(path).convert("RGBA")
+                photo = photo.resize((50, 50))  # Using the same size as 3D tooltip
+                # Convert to base64
+                buffered = io.BytesIO()
+                photo.save(buffered, format="PNG")
+                return base64.b64encode(buffered.getvalue()).decode()
+            except Exception as e:
+                print(f"Error loading image {path}: {str(e)}")
+                return None
+
+        axial_img = load_and_resize_image(axial_path)
+        coronal_img = load_and_resize_image(coronal_path)
+        sagittal_img = load_and_resize_image(sagittal_path)
+
+        # Create a div with the patient info and images
+        children = [
             html.Div([
-                html.P([
-                    html.Strong(f"{x_axis}: "),
-                    f"{x_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{y_axis}: "),
-                    f"{y_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{z_axis}: "),
-                    f"{z_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{color_axis}: "),
-                    f"{color_val}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{size_axis}: "),
-                    f"{size_val}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-            ], style={'marginBottom': '5px'}),
-        ], style={
-            'backgroundColor': 'white',
-            'padding': '5px',
-            'border': '1px solid red',
-            'borderRadius': '3px',
-            'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-            'zIndex': '1000',
-            'position': 'absolute',
-            'pointerEvents': 'none'
-        })
-    ]
-    return True, bbox, children
+                html.Div([
+                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                    html.Div([
+                        html.P([
+                            html.Strong(f"{x_axis}: "),
+                            f"{x_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{y_axis}: "),
+                            f"{y_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{z_axis}: "),
+                            f"{z_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{color_axis}: "),
+                            f"{color_val}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{size_axis}: "),
+                            f"{size_val}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                    ], style={'marginBottom': '5px'}),
+                ], style={'marginBottom': '5px'}),
+                
+                # Images in a row
+                html.Div([
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                ], style={'textAlign': 'center'}),
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                'zIndex': '10000',
+                'position': 'absolute'
+            })
+        ]
+        return True, bbox, children
+    except Exception as e:
+        print(f"Error in tooltip: {str(e)}")
+        children = [
+            html.Div([
+                html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'fontSize': '14px'}),
+                html.P(f"{x_axis}: {x_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{y_axis}: {y_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{z_axis}: {z_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{color_axis}: {color_val}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{size_axis}: {size_val}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"Error loading images: {str(e)}", style={'color': 'red', 'fontSize': '10px'})
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'zIndex': '1000',
+                'position': 'relative'
+            })
+        ]
+        return True, bbox, children
 
 # Add tooltip callback for box plot
 @app.callback(
@@ -3175,32 +3589,115 @@ def display_box_hover(hoverData, x_axis, y_axis):
     x_val = hover_data["x"]
     y_val = hover_data["y"]
 
-    # Create a div with the patient info
-    children = [
-        html.Div([
-            html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+    try:
+        # Create paths for each image
+        basePath = 'assets/Captures_Nums_small/'
+        axial_path = basePath + str(pt_id) + '/Axial.tiff'
+        coronal_path = basePath + str(pt_id) + '/Coronal.tiff'
+        sagittal_path = basePath + str(pt_id) + '/Sagittal.tiff'
+
+        # Load and process images using PIL
+        def load_and_resize_image(path):
+            try:
+                photo = Image.open(path).convert("RGBA")
+                photo = photo.resize((50, 50))  # Using the same size as 3D tooltip
+                # Convert to base64
+                buffered = io.BytesIO()
+                photo.save(buffered, format="PNG")
+                return base64.b64encode(buffered.getvalue()).decode()
+            except Exception as e:
+                print(f"Error loading image {path}: {str(e)}")
+                return None
+
+        axial_img = load_and_resize_image(axial_path)
+        coronal_img = load_and_resize_image(coronal_path)
+        sagittal_img = load_and_resize_image(sagittal_path)
+
+        # Create a div with the patient info and images
+        children = [
             html.Div([
-                html.P([
-                    html.Strong(f"{x_axis}: "),
-                    f"{x_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P([
-                    html.Strong(f"{y_axis}: "),
-                    f"{y_val:.2f}"
-                ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-            ], style={'marginBottom': '5px'}),
-        ], style={
-            'backgroundColor': 'white',
-            'padding': '5px',
-            'border': '1px solid red',
-            'borderRadius': '3px',
-            'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-            'zIndex': '10000',
-            'position': 'absolute',
-            'pointerEvents': 'none'
-        })
-    ]
-    return True, bbox, children
+                html.Div([
+                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                    html.Div([
+                        html.P([
+                            html.Strong(f"{x_axis}: "),
+                            f"{x_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.P([
+                            html.Strong(f"{y_axis}: "),
+                            f"{y_val:.2f}"
+                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                    ], style={'marginBottom': '5px'}),
+                ], style={'marginBottom': '5px'}),
+                
+                # Images in a row
+                html.Div([
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    html.Div([
+                        html.Img(
+                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
+                            style={
+                                "width": "50px",
+                                'display': 'block',
+                                'margin': '2px auto',
+                                'border': '1px solid black'
+                            }
+                        ),
+                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                ], style={'textAlign': 'center'}),
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                'zIndex': '10000',
+                'position': 'absolute'
+            })
+        ]
+        return True, bbox, children
+    except Exception as e:
+        print(f"Error in tooltip: {str(e)}")
+        children = [
+            html.Div([
+                html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'fontSize': '14px'}),
+                html.P(f"{x_axis}: {x_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{y_axis}: {y_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"Error loading images: {str(e)}", style={'color': 'red', 'fontSize': '10px'})
+            ], style={
+                'backgroundColor': 'white',
+                'padding': '5px',
+                'border': '1px solid red',
+                'borderRadius': '3px',
+                'zIndex': '1000',
+                'position': 'relative'
+            })
+        ]
+        return True, bbox, children
 
 # DataTable update callback
 @app.callback(
@@ -3253,17 +3750,30 @@ def update_table_filters(data, field_types):
 def update_scatter_dropdowns(field_types):
     if not field_types:
         return [], [], [], [], None, None, None, None
-    
-    num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
-    cat_options = [{'label': col, 'value': col} for col in field_types['categorical']]
-    
-    # Set default values if available
-    x_default = field_types['numerical'][0] if field_types['numerical'] else None
-    y_default = field_types['numerical'][1] if len(field_types['numerical']) > 1 else field_types['numerical'][0] if field_types['numerical'] else None
-    color_default = field_types['categorical'][0] if field_types['categorical'] else None
-    size_default = field_types['categorical'][1] if len(field_types['categorical']) > 1 else field_types['categorical'][0] if field_types['categorical'] else None
-    
-    return num_options, num_options, cat_options, cat_options, x_default, y_default, color_default, size_default
+
+    def pick(preferred_list, target_name):
+        if not preferred_list or not target_name:
+            return None
+        target_norm = str(target_name).strip().lower()
+        for col in preferred_list:
+            if str(col).strip().lower() == target_norm:
+                return col
+        return None
+
+    num_cols = field_types.get('numerical', [])
+    cat_cols = field_types.get('categorical', [])
+
+    num_options = [{'label': col, 'value': col} for col in num_cols]
+    cat_options = [{'label': col, 'value': col} for col in cat_cols]
+    color_options = [{'label': col, 'value': col} for col in (num_cols + cat_cols)]
+
+    # Requested defaults
+    x_default = pick(num_cols, 'Tumor Surgery Size') or (num_cols[0] if num_cols else None)
+    y_default = pick(num_cols, 'V12 Skin Total') or (num_cols[1] if len(num_cols) > 1 else (num_cols[0] if num_cols else None))
+    color_default = pick(num_cols + cat_cols, 'Tumor Surgery Size') or (cat_cols[0] if cat_cols else (num_cols[0] if num_cols else None))
+    size_default = pick(num_cols, 'V12 Skin Total') or (num_cols[0] if num_cols else None)
+
+    return num_options, num_options, color_options, num_options, x_default, y_default, color_default, size_default
 
 # Histogram plot dropdowns
 @app.callback(
@@ -3276,14 +3786,26 @@ def update_scatter_dropdowns(field_types):
 def update_histogram_dropdowns(field_types):
     if not field_types:
         return [], [], None, None
-    
-    num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
-    cat_options = [{'label': col, 'value': col} for col in field_types['categorical']]
-    
-    # Set default values if available
-    x_default = field_types['numerical'][0] if field_types['numerical'] else None
-    group_default = field_types['categorical'][0] if field_types['categorical'] else None
-    
+
+    def pick(preferred_list, target_name):
+        if not preferred_list or not target_name:
+            return None
+        target_norm = str(target_name).strip().lower()
+        for col in preferred_list:
+            if str(col).strip().lower() == target_norm:
+                return col
+        return None
+
+    num_cols = field_types.get('numerical', [])
+    cat_cols = field_types.get('categorical', [])
+
+    num_options = [{'label': col, 'value': col} for col in num_cols]
+    cat_options = [{'label': col, 'value': col} for col in cat_cols]
+
+    # Requested defaults
+    x_default = pick(num_cols, 'Tumor Surgery Size') or (num_cols[0] if num_cols else None)
+    group_default = pick(cat_cols, 'Histology Category') or (cat_cols[0] if cat_cols else None)
+
     return num_options, cat_options, x_default, group_default
 
 # Box plot dropdowns
@@ -3297,14 +3819,27 @@ def update_histogram_dropdowns(field_types):
 def update_box_dropdowns(field_types):
     if not field_types:
         return [], [], None, None
-    
-    num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
-    
-    # Set default values if available
-    x_default = field_types['numerical'][0] if field_types['numerical'] else None
-    y_default = field_types['numerical'][1] if len(field_types['numerical']) > 1 else field_types['numerical'][0] if field_types['numerical'] else None
-    
-    return num_options, num_options, x_default, y_default
+
+    def pick(preferred_list, target_name):
+        if not preferred_list or not target_name:
+            return None
+        target_norm = str(target_name).strip().lower()
+        for col in preferred_list:
+            if str(col).strip().lower() == target_norm:
+                return col
+        return None
+
+    num_cols = field_types.get('numerical', [])
+    cat_cols = field_types.get('categorical', [])
+
+    x_options = [{'label': col, 'value': col} for col in cat_cols]
+    y_options = [{'label': col, 'value': col} for col in num_cols]
+
+    # Requested defaults
+    x_default = pick(cat_cols, 'AJCC Stage') or (cat_cols[0] if cat_cols else None)
+    y_default = pick(num_cols, 'V12 Skin Total') or (num_cols[0] if num_cols else None)
+
+    return x_options, y_options, x_default, y_default
 
 # Survival plot dropdown
 @app.callback(
@@ -3344,18 +3879,31 @@ def update_survival_dropdown(field_types):
 def update_3d_dropdowns(field_types):
     if not field_types:
         return [], [], [], [], [], None, None, None, None, None
-    
-    num_options = [{'label': col, 'value': col} for col in field_types['numerical']]
-    cat_options = [{'label': col, 'value': col} for col in field_types['categorical']]
-    
-    # Set default values if available
-    x_default = field_types['numerical'][0] if field_types['numerical'] else None
-    y_default = field_types['numerical'][1] if len(field_types['numerical']) > 1 else field_types['numerical'][0] if field_types['numerical'] else None
-    z_default = field_types['numerical'][2] if len(field_types['numerical']) > 2 else field_types['numerical'][0] if field_types['numerical'] else None
-    color_default = field_types['categorical'][0] if field_types['categorical'] else None
-    size_default = field_types['categorical'][1] if len(field_types['categorical']) > 1 else field_types['categorical'][0] if field_types['categorical'] else None
-    
-    return num_options, num_options, num_options, cat_options, cat_options, x_default, y_default, z_default, color_default, size_default
+
+    def pick(preferred_list, target_name):
+        if not preferred_list or not target_name:
+            return None
+        target_norm = str(target_name).strip().lower()
+        for col in preferred_list:
+            if str(col).strip().lower() == target_norm:
+                return col
+        return None
+
+    num_cols = field_types.get('numerical', [])
+    cat_cols = field_types.get('categorical', [])
+
+    num_options = [{'label': col, 'value': col} for col in num_cols]
+    cat_options = [{'label': col, 'value': col} for col in cat_cols]
+    color_options = [{'label': col, 'value': col} for col in (num_cols + cat_cols)]
+
+    # Requested defaults
+    x_default = pick(num_cols, 'Tumor Surgery Size') or (num_cols[0] if num_cols else None)
+    y_default = pick(num_cols, 'V12 Skin Total') or (num_cols[1] if len(num_cols) > 1 else (num_cols[0] if num_cols else None))
+    z_default = pick(num_cols, 'Age at Consult') or (num_cols[2] if len(num_cols) > 2 else (num_cols[0] if num_cols else None))
+    color_default = pick(num_cols + cat_cols, 'Tumor Surgery Size') or (cat_cols[0] if cat_cols else (num_cols[0] if num_cols else None))
+    size_default = pick(num_cols, 'V12 Skin Total') or (num_cols[0] if num_cols else None)
+
+    return num_options, num_options, num_options, color_options, num_options, x_default, y_default, z_default, color_default, size_default
 
 # set the pandas dataframe to be datatable and update patient count display 
 @app.callback(
@@ -3449,6 +3997,82 @@ def display_save_timestamp(timestamp):
     return ""
 
 # Clear success message when new data is uploaded - REMOVED to prevent flickering
+
+# New: Dynamic border color for dropdowns based on selection state
+@app.callback(
+    [
+        Output('x-dropdown', 'style'),
+        Output('y-dropdown', 'style'),
+        Output('color-dropdown', 'style'),
+        Output('size-dropdown', 'style'),
+        Output('x-histo', 'style'),
+        Output('group-histo', 'style'),
+        Output('x-box', 'style'),
+        Output('y-box', 'style'),
+        Output('y-surv', 'style'),
+        Output('x-3d-dropdown', 'style'),
+        Output('y-3d-dropdown', 'style'),
+        Output('z-3d-dropdown', 'style'),
+        Output('color-3d-dropdown', 'style'),
+        Output('size-3d-dropdown', 'style'),
+    ],
+    [
+        Input('x-dropdown', 'value'),
+        Input('y-dropdown', 'value'),
+        Input('color-dropdown', 'value'),
+        Input('size-dropdown', 'value'),
+        Input('x-histo', 'value'),
+        Input('group-histo', 'value'),
+        Input('x-box', 'value'),
+        Input('y-box', 'value'),
+        Input('y-surv', 'value'),
+        Input('x-3d-dropdown', 'value'),
+        Input('y-3d-dropdown', 'value'),
+        Input('z-3d-dropdown', 'value'),
+        Input('color-3d-dropdown', 'value'),
+        Input('size-3d-dropdown', 'value'),
+    ]
+)
+def update_dropdown_border_styles(
+    x_dropdown_value,
+    y_dropdown_value,
+    color_dropdown_value,
+    size_dropdown_value,
+    x_histo_value,
+    group_histo_value,
+    x_box_value,
+    y_box_value,
+    y_surv_value,
+    x3d_value,
+    y3d_value,
+    z3d_value,
+    color3d_value,
+    size3d_value,
+):
+    def style_for(value):
+        is_selected = (
+            value is not None and
+            (not isinstance(value, str) or value.strip() != '') and
+            (not isinstance(value, list) or len(value) > 0)
+        )
+        return {'borderColor': 'green' if is_selected else 'red', 'borderWidth': '3px'}
+
+    return (
+        style_for(x_dropdown_value),
+        style_for(y_dropdown_value),
+        style_for(color_dropdown_value),
+        style_for(size_dropdown_value),
+        style_for(x_histo_value),
+        style_for(group_histo_value),
+        style_for(x_box_value),
+        style_for(y_box_value),
+        style_for(y_surv_value),
+        style_for(x3d_value),
+        style_for(y3d_value),
+        style_for(z3d_value),
+        style_for(color3d_value),
+        style_for(size3d_value),
+    )
 
 if __name__ == "__main__":
     # app.run_server(debug=True)
