@@ -4075,5 +4075,6 @@ def update_dropdown_border_styles(
     )
 
 if __name__ == "__main__":
-    # app.run_server(debug=True)
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    # Respect PORT env var for local runs (GAE sets this in production)
+    port = int(os.environ.get("PORT", "8080"))
+    app.run(host='0.0.0.0', port=port, debug=False)
