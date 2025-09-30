@@ -797,23 +797,18 @@ app.layout = html.Div(
                                                 html.Br(),html.Br(),                                                    
 
 
-                                                # html.H3("Grouping:"),                                                
+                                                html.H3("Grouping:"),                                                
 
-                                                # html.Div(
-                                                #     className="div-for-dropdown",
-                                                #     children=[
-                                                #     # Dropdown for clinical T-Stage
-                                                #     dcc.Dropdown(
-                                                #         id="group-surv",
-                                                #         options=[
-                                                            
-                                                #                 {"label": col, "value": col}
-                                                #                 for col in sorted(df.select_dtypes(include='object')) 
-                                                #         ],
-                                                #         value="Histology Category",
-                                                #         style=  {'borderColor': 'red', 'borderWidth': '3px'},
-                                                #     )],
-                                                # ),
+                                                html.Div(
+                                                    className="div-for-dropdown",
+                                                    children=[
+                                                    dcc.Dropdown(
+                                                        id="group-surv",
+                                                        options=[],
+                                                        value=None,
+                                                        style=  {'borderColor': 'red', 'borderWidth': '3px'},
+                                                    )],
+                                                ),
 
                                                 html.H3("Median # of Days:"),
 
@@ -2119,11 +2114,11 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
     Output("pts-output", component_property='children'),
     Output("events-output", component_property='children'),], 
     [Input('y-surv', 'value'),
-    # Input('group-surv', 'value'),
+    Input('group-surv', 'value'),
     Input('table-filters', 'derived_virtual_indices'),
     Input('uploaded-data', 'data')]
     )
-def display_surv(yAxis, dataInds, uploaded_data):
+def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
     if uploaded_data is None:
         fig = go.Figure(layout=layout)
         fig.add_annotation(
@@ -2226,47 +2221,56 @@ def display_surv(yAxis, dataInds, uploaded_data):
             return fig, 'Days: Data error', 'Patients: 0', 'Events: 0'
 
         # fit the KM and plot 
-        km = KaplanMeierFitter()
-        km.fit(durations=fuDays, event_observed=events, label="Group 1")
-        
         survFig = go.Figure(layout=layout)
 
-        survFig.add_trace(
-            
-            go.Scatter(
-                x=km.survival_function_.index, y=km.survival_function_.values.flatten(), mode='lines+markers', 
-                marker=dict(
-                    opacity=0.9,
-                    symbol="line-ns-open",
-                    size=15,
-                    color="red",
+        # If a grouping column is selected, stratify by categories
+        if groupAxis and groupAxis in data.columns:
+            group_series = data[groupAxis].astype(str)
+            common_indices = fuDays.index.intersection(events.index)
+            group_series = group_series.loc[common_indices]
+            fuDays_aligned = fuDays.loc[common_indices]
+            events_aligned = events.loc[common_indices]
 
+            for cat in sorted(group_series.dropna().unique()):
+                mask = group_series == cat
+                if mask.any():
+                    km = KaplanMeierFitter()
+                    km.fit(durations=fuDays_aligned[mask], event_observed=events_aligned[mask], label=str(cat))
+                    survFig.add_trace(
+                        go.Scatter(
+                            x=km.survival_function_.index, y=km.survival_function_.values.flatten(), mode='lines+markers', 
+                            marker=dict(opacity=0.9, symbol="line-ns-open", size=12),
+                            line=dict(shape="vh", width=3),
+                            name=str(cat),
+                            showlegend=True,
+                        ),
+                    )
+        else:
+            km = KaplanMeierFitter()
+            km.fit(durations=fuDays, event_observed=events, label="Group 1")
+            survFig.add_trace(
+                go.Scatter(
+                    x=km.survival_function_.index, y=km.survival_function_.values.flatten(), mode='lines+markers', 
+                    marker=dict(opacity=0.9, symbol="line-ns-open", size=15, color="red"),
+                    line=dict(shape="vh", width=4, color=uclaBlue),
+                    showlegend=False,
                 ),
-                line=dict(
-                    shape="vh",
-                    width=4,
-                    color=uclaBlue,
-                ),
-                showlegend=False,
-            ),
-        )
-
-        ci_times = np.concatenate((km.cumulative_density_.index,km.cumulative_density_.index[::-1]), axis=0)
-        ci_vals = np.concatenate((km.confidence_interval_['Group 1_lower_0.95'],km.confidence_interval_['Group 1_upper_0.95'][::-1]), axis=0)
-
-        survFig.add_trace(
-
-            go.Scatter(
-                x=ci_times,
-                y=ci_vals,
-                fill='toself',
-                fillcolor='rgba(100,0,80,0.2)',
-                line=dict(color='rgba(255,255,255,0)'),
-                hoverinfo="skip",
-                showlegend=False
             )
-            
-        )        
+
+            ci_times = np.concatenate((km.cumulative_density_.index,km.cumulative_density_.index[::-1]), axis=0)
+            ci_vals = np.concatenate((km.confidence_interval_['Group 1_lower_0.95'],km.confidence_interval_['Group 1_upper_0.95'][::-1]), axis=0)
+
+            survFig.add_trace(
+                go.Scatter(
+                    x=ci_times,
+                    y=ci_vals,
+                    fill='toself',
+                    fillcolor='rgba(100,0,80,0.2)',
+                    line=dict(color='rgba(255,255,255,0)'),
+                    hoverinfo="skip",
+                    showlegend=False
+                )
+            )
 
         survFig.update_layout(
             yaxis=dict(
@@ -2379,50 +2383,56 @@ def display_surv(yAxis, dataInds, uploaded_data):
             )
             return fig, 'Days: Data error', 'Patients: 0', 'Events: 0'
 
-        # fit the KM and plot 
-        km = KaplanMeierFitter()
-        ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
-        km.fit(durations=fuDays, event_observed=events, label="Group 1")
-        ajf.fit(durations=fuDays, event_observed=events, event_of_interest=1)
-
+        # fit and plot AJF
         survFig = go.Figure(layout=layout)
 
-        survFig.add_trace(
+        if groupAxis and groupAxis in data.columns:
+            group_series = data[groupAxis].astype(str)
+            common_indices = fuDays.index.intersection(events.index)
+            group_series = group_series.loc[common_indices]
+            fuDays_aligned = fuDays.loc[common_indices]
+            events_aligned = events.loc[common_indices]
 
-            go.Scatter(
-                x=ajf.cumulative_density_.index, y=ajf.cumulative_density_.values.flatten(), mode='lines+markers', 
-                marker=dict(
-                    opacity=0.9,
-                    symbol="line-ns-open",
-                    size=15,
-                    color="red",
-
+            for cat in sorted(group_series.dropna().unique()):
+                mask = group_series == cat
+                if mask.any():
+                    ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
+                    ajf.fit(durations=fuDays_aligned[mask], event_observed=events_aligned[mask], event_of_interest=1)
+                    survFig.add_trace(
+                        go.Scatter(
+                            x=ajf.cumulative_density_.index, y=ajf.cumulative_density_.values.flatten(), mode='lines+markers', 
+                            marker=dict(opacity=0.9, symbol="line-ns-open", size=12),
+                            line=dict(shape="vh", width=3),
+                            name=str(cat),
+                            showlegend=True,
+                        ),
+                    )
+        else:
+            ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
+            ajf.fit(durations=fuDays, event_observed=events, event_of_interest=1)
+            survFig.add_trace(
+                go.Scatter(
+                    x=ajf.cumulative_density_.index, y=ajf.cumulative_density_.values.flatten(), mode='lines+markers', 
+                    marker=dict(opacity=0.9, symbol="line-ns-open", size=15, color="red"),
+                    line=dict(shape="vh", width=4, color=uclaBlue),
+                    showlegend=False,
                 ),
-                line=dict(
-                    shape="vh",
-                    width=4,
-                    color=uclaBlue,
-                ),
-                showlegend=False,
-            ),
-        )
-
-        ci_times = np.concatenate((ajf.cumulative_density_.index,ajf.cumulative_density_.index[::-1]), axis=0)
-        ci_vals = np.concatenate((ajf.confidence_interval_['AJ_estimate_upper_0.95'],ajf.confidence_interval_['AJ_estimate_lower_0.95'][::-1]), axis=0)
-
-        survFig.add_trace(
-
-            go.Scatter(
-                x=ci_times,
-                y=ci_vals,
-                fill='toself',
-                fillcolor='rgba(100,0,80,0.2)',
-                line=dict(color='rgba(255,255,255,0)'),
-                hoverinfo="skip",
-                showlegend=False
             )
-            
-        )
+
+            ci_times = np.concatenate((ajf.cumulative_density_.index,ajf.cumulative_density_.index[::-1]), axis=0)
+            ci_vals = np.concatenate((ajf.confidence_interval_['AJ_estimate_upper_0.95'],ajf.confidence_interval_['AJ_estimate_lower_0.95'][::-1]), axis=0)
+
+            survFig.add_trace(
+                go.Scatter(
+                    x=ci_times,
+                    y=ci_vals,
+                    fill='toself',
+                    fillcolor='rgba(100,0,80,0.2)',
+                    line=dict(color='rgba(255,255,255,0)'),
+                    hoverinfo="skip",
+                    showlegend=False
+                )
+            )
 
         survFig.update_layout(
             yaxis=dict(
@@ -2536,50 +2546,56 @@ def display_surv(yAxis, dataInds, uploaded_data):
             )
             return fig, 'Days: Data error', 'Patients: 0', 'Events: 0'
 
-        # fit the KM and plot
-        km = KaplanMeierFitter()
-        ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
-        # km.fit(durations=fuDays, event_observed=events, label="Group 1")
-        ajf.fit(durations=fuDays, event_observed=events, event_of_interest=1)
-
+        # fit and plot AJF
         survFig = go.Figure(layout=layout)
 
-        survFig.add_trace(
+        if groupAxis and groupAxis in data.columns:
+            group_series = data[groupAxis].astype(str)
+            common_indices = fuDays.index.intersection(events.index)
+            group_series = group_series.loc[common_indices]
+            fuDays_aligned = fuDays.loc[common_indices]
+            events_aligned = events.loc[common_indices]
 
-            go.Scatter(
-                x=ajf.cumulative_density_.index, y=ajf.cumulative_density_.values.flatten(), mode='lines+markers', 
-                marker=dict(
-                    opacity=0.9,
-                    symbol="line-ns-open",
-                    size=15,
-                    color="red",
-
+            for cat in sorted(group_series.dropna().unique()):
+                mask = group_series == cat
+                if mask.any():
+                    ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
+                    ajf.fit(durations=fuDays_aligned[mask], event_observed=events_aligned[mask], event_of_interest=1)
+                    survFig.add_trace(
+                        go.Scatter(
+                            x=ajf.cumulative_density_.index, y=ajf.cumulative_density_.values.flatten(), mode='lines+markers', 
+                            marker=dict(opacity=0.9, symbol="line-ns-open", size=12),
+                            line=dict(shape="vh", width=3),
+                            name=str(cat),
+                            showlegend=True,
+                        ),
+                    )
+        else:
+            ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
+            ajf.fit(durations=fuDays, event_observed=events, event_of_interest=1)
+            survFig.add_trace(
+                go.Scatter(
+                    x=ajf.cumulative_density_.index, y=ajf.cumulative_density_.values.flatten(), mode='lines+markers', 
+                    marker=dict(opacity=0.9, symbol="line-ns-open", size=15, color="red"),
+                    line=dict(shape="vh", width=4, color=uclaBlue),
+                    showlegend=False,
                 ),
-                line=dict(
-                    shape="vh",
-                    width=4,
-                    color=uclaBlue,
-                ),
-                showlegend=False,
-            ),
-        )
-
-        ci_times = np.concatenate((ajf.cumulative_density_.index,ajf.cumulative_density_.index[::-1]), axis=0)
-        ci_vals = np.concatenate((ajf.confidence_interval_['AJ_estimate_upper_0.95'],ajf.confidence_interval_['AJ_estimate_lower_0.95'][::-1]), axis=0)
-
-        survFig.add_trace(
-
-            go.Scatter(
-                x=ci_times,
-                y=ci_vals,
-                fill='toself',
-                fillcolor='rgba(100,0,80,0.2)',
-                line=dict(color='rgba(255,255,255,0)'),
-                hoverinfo="skip",
-                showlegend=False
             )
-            
-        )
+
+            ci_times = np.concatenate((ajf.cumulative_density_.index,ajf.cumulative_density_.index[::-1]), axis=0)
+            ci_vals = np.concatenate((ajf.confidence_interval_['AJ_estimate_upper_0.95'],ajf.confidence_interval_['AJ_estimate_lower_0.95'][::-1]), axis=0)
+
+            survFig.add_trace(
+                go.Scatter(
+                    x=ci_times,
+                    y=ci_vals,
+                    fill='toself',
+                    fillcolor='rgba(100,0,80,0.2)',
+                    line=dict(color='rgba(255,255,255,0)'),
+                    hoverinfo="skip",
+                    showlegend=False
+                )
+            )
 
         survFig.update_layout(
             yaxis=dict(
@@ -3862,6 +3878,40 @@ def update_survival_dropdown(field_types):
     
     return survival_options, default_value
 
+# Survival grouping dropdown (categorical focus, e.g., Diabetes)
+@app.callback(
+    [Output('group-surv', 'options'),
+     Output('group-surv', 'value')],
+    [Input('field-types', 'data')]
+)
+def update_survival_group_dropdown(field_types):
+    if not field_types:
+        return [], None
+
+    def pick(preferred_list, target_name):
+        if not preferred_list or not target_name:
+            return None
+        target_norm = str(target_name).strip().lower()
+        for col in preferred_list:
+            if str(col).strip().lower() == target_norm:
+                return col
+        return None
+
+    # Prefer categorical columns for grouping
+    cat_cols = field_types.get('categorical', [])
+    # Include numeric columns only if user wants; keep it simple: categorical only for now
+    group_candidates = cat_cols
+    group_options = [{'label': col, 'value': col} for col in group_candidates]
+
+    # Prefer common clinical categories
+    group_default = (
+        pick(group_candidates, 'Diabetes') or
+        pick(group_candidates, 'Histology Category') or
+        (group_candidates[0] if group_candidates else None)
+    )
+
+    return group_options, group_default
+
 # 3D plot dropdowns
 @app.callback(
     [Output('x-3d-dropdown', 'options'),
@@ -4010,6 +4060,7 @@ def display_save_timestamp(timestamp):
         Output('x-box', 'style'),
         Output('y-box', 'style'),
         Output('y-surv', 'style'),
+        Output('group-surv', 'style'),
         Output('x-3d-dropdown', 'style'),
         Output('y-3d-dropdown', 'style'),
         Output('z-3d-dropdown', 'style'),
@@ -4026,6 +4077,7 @@ def display_save_timestamp(timestamp):
         Input('x-box', 'value'),
         Input('y-box', 'value'),
         Input('y-surv', 'value'),
+        Input('group-surv', 'value'),
         Input('x-3d-dropdown', 'value'),
         Input('y-3d-dropdown', 'value'),
         Input('z-3d-dropdown', 'value'),
@@ -4043,6 +4095,7 @@ def update_dropdown_border_styles(
     x_box_value,
     y_box_value,
     y_surv_value,
+    group_surv_value,
     x3d_value,
     y3d_value,
     z3d_value,
@@ -4067,6 +4120,7 @@ def update_dropdown_border_styles(
         style_for(x_box_value),
         style_for(y_box_value),
         style_for(y_surv_value),
+        style_for(group_surv_value),
         style_for(x3d_value),
         style_for(y3d_value),
         style_for(z3d_value),
