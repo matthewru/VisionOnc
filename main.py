@@ -870,108 +870,108 @@ app.layout = html.Div(
 
                             ]), 
 
-                            dcc.Tab(
-                                id="tab-9",
-                                value="tab-9",
-                                label='Swimmers', 
-                                className='custom-tab', 
-                                selected_className='custom-tab--selected',
-                                style={'padding': '12px 18px'},
-                                selected_style={'padding': '12px 18px'},
-                                children=[
-
-                                # Column for left controls
-                                html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
-                                    children=[
-
-                                        # Change to side-by-side for mobile layout
-                                        html.Div(
-                                            className="row",
-                                            children=[
-
-                                                html.Br(),html.Br(), 
-
-                                                # Change to side-by-side for mobile layout
-                                                html.Div(
-                                                    className="row",
-                                                    children=[
-
-                                                        html.Img(
-                                                            className="legend", 
-                                                            src="assets/swimLegend.png",
-                                                            style={'height':'100%', 'width':'100%'}
-                                                        ),                                
-                                                    ],
-                                                ),                                                         
-
-                                                html.Br(),                                                
-
-                                            ],
-                                        ),                                                    
-                                    ],
-                                ),
-
-                                # Middle Graph
-                                html.Div(
-                                    className="six columns div-for-charts bg-grey",
-                                    children=[        
-                                        html.Br(),
-
-                                        html.H4("Wound Complications"),                                        
-
-                                        dcc.Graph(id="swimmer-plot"),
-
-                                        html.H4("Time [years]"),
-
-                                        html.Br(),
-
-                                    ]
-                                ),
-
-                                # Right controls
-                                html.Div(
-                                    className="three columns div-user-controls bg-grey-copy",
-                                    children=[
-
-                                        # Change to side-by-side for mobile layout
-                                        html.Div(
-                                            className="row",
-                                            children=[
-
-                                                html.Br(),html.Br(),
-
-                                                html.H3("# of Wound Complication Patients:"),
-
-                                                html.Div(id='wound-output'),   
-
-                                                html.Br(),html.Br(),  
-
-                                                # html.H3("Grouping:"),                                                
-
-                                                # html.Div(
-                                                #     className="div-for-dropdown",
-                                                #     children=[
-                                                #     # Dropdown for clinical T-Stage
-                                                #     dcc.Dropdown(
-                                                #         id="group-box",
-                                                #         options=[
-                                                            
-                                                #                 {"label": col, "value": col}
-                                                #                 for col in sorted(df.select_dtypes(include='object')) 
-                                                #         ],
-                                                #         value="Histology Category",
-                                                #         style=  {'borderColor': 'red', 'borderWidth': '3px'},
-                                                #     )],
-                                                # ),                                                     
-
-                                                html.Br(),                                                
-
-                                            ],
-                                        ),                                                    
-                                    ],
-                                ), 
-                            ]),  
+                            # dcc.Tab(
+                            #     id="tab-9",
+                            #     value="tab-9",
+                            #     label='Swimmers', 
+                            #     className='custom-tab', 
+                            #     selected_className='custom-tab--selected',
+                            #     style={'padding': '12px 18px'},
+                            #     selected_style={'padding': '12px 18px'},
+                            #     children=[
+                            #
+                            #     # Column for left controls
+                            #     html.Div(
+                            #         className="three columns div-user-controls bg-grey-copy",
+                            #         children=[
+                            #
+                            #             # Change to side-by-side for mobile layout
+                            #             html.Div(
+                            #                 className="row",
+                            #                 children=[
+                            #
+                            #                     html.Br(),html.Br(), 
+                            #
+                            #                     # Change to side-by-side for mobile layout
+                            #                     html.Div(
+                            #                         className="row",
+                            #                         children=[
+                            #
+                            #                             html.Img(
+                            #                                 className="legend", 
+                            #                                 src="assets/swimLegend.png",
+                            #                                 style={'height':'100%', 'width':'100%'}
+                            #                             ),                                
+                            #                         ],
+                            #                     ),                                                         
+                            #
+                            #                     html.Br(),                                                
+                            #
+                            #                 ],
+                            #             ),                                                    
+                            #         ],
+                            #     ),
+                            #
+                            #     # Middle Graph
+                            #     html.Div(
+                            #         className="six columns div-for-charts bg-grey",
+                            #         children=[        
+                            #             html.Br(),
+                            #
+                            #             html.H4("Wound Complications"),                                        
+                            #
+                            #             dcc.Graph(id="swimmer-plot"),
+                            #
+                            #             html.H4("Time [years]"),
+                            #
+                            #             html.Br(),
+                            #
+                            #         ]
+                            #     ),
+                            #
+                            #     # Right controls
+                            #     html.Div(
+                            #         className="three columns div-user-controls bg-grey-copy",
+                            #         children=[
+                            #
+                            #             # Change to side-by-side for mobile layout
+                            #             html.Div(
+                            #                 className="row",
+                            #                 children=[
+                            #
+                            #                     html.Br(),html.Br(),
+                            #
+                            #                     html.H3("# of Wound Complication Patients:"),
+                            #
+                            #                     html.Div(id='wound-output'),   
+                            #
+                            #                     html.Br(),html.Br(),  
+                            #
+                            #                     # html.H3("Grouping:"),                                                
+                            #
+                            #                     # html.Div(
+                            #                     #     className="div-for-dropdown",
+                            #                     #     children=[
+                            #                     #     # Dropdown for clinical T-Stage
+                            #                     #     dcc.Dropdown(
+                            #                     #         id="group-box",
+                            #                     #         options=[
+                            #                     #             
+                            #                     #                 {"label": col, "value": col}
+                            #                     #                 for col in sorted(df.select_dtypes(include='object')) 
+                            #                     #         ],
+                            #                     #         value="Histology Category",
+                            #                     #         style=  {'borderColor': 'red', 'borderWidth': '3px'},
+                            #                     #     )],
+                            #                     # ),                                                     
+                            #
+                            #                     html.Br(),                                                
+                            #
+                            #                 ],
+                            #             ),                                                    
+                            #         ],
+                            #     ), 
+                            # ]),  
                             dcc.Tab(
                                 id="tab-10",
                                 value="tab-10",
