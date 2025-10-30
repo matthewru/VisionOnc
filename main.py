@@ -1647,7 +1647,8 @@ def compute(xAxis, yAxis, colorAxis, sizeAxis, dataInds, uploaded_data):
     y_data = y_data[valid_mask]
     color_data = color_data[valid_mask]
     size_data = size_data[valid_mask]
-    patient_ids = data.index[valid_mask]
+    patient_ids = data.get('Enrolled Patient #', data.index)
+    patient_ids = patient_ids[valid_mask]
 
     # Fill any remaining NaN values in color/size data
     color_data = color_data.fillna(0)
@@ -2055,7 +2056,8 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
 
     x_data = x_data[valid_mask]
     y_data = y_data[valid_mask]
-    patient_ids = data.index[valid_mask]
+    patient_ids = data.get('Enrolled Patient #', data.index)
+    patient_ids = patient_ids[valid_mask]
 
     xLabels = np.repeat(xAxis, len(x_data))
     yLabels = np.repeat(yAxis, len(y_data))
@@ -2740,7 +2742,7 @@ def display_map(dataInds, uploaded_data):
         marker_size = 8,  
         customdata = np.stack((data_valid.get('Tumor Surgery Size', ['N/A']*len(data_valid)), 
                               data_valid.get('Histology on Surgery', ['N/A']*len(data_valid)), 
-                              data_valid.index), axis=-1),
+                              data_valid.get('Enrolled Patient #', data_valid.index)), axis=-1),
         hoverinfo='none'
         ),
     )
