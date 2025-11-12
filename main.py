@@ -157,6 +157,37 @@ app.layout = html.Div(
                                                 },
                                                 multiple=False
                                             ),
+                                            html.Div(
+                                                children=[
+                                                    html.Button(
+                                                        "Use Sample Data",
+                                                        id='load-sample-data',
+                                                        n_clicks=0,
+                                                        style={
+                                                            'backgroundColor': '#2774AE',
+                                                            'color': 'white',
+                                                            'border': 'none',
+                                                            'padding': '0 16px',
+                                                            'borderRadius': '4px',
+                                                            'cursor': 'pointer',
+                                                            'fontWeight': '600',
+                                                            'display': 'inline-flex',
+                                                            'alignItems': 'center',
+                                                            'justifyContent': 'center',
+                                                            'height': '40px'
+                                                        }
+                                                    ),
+                                                    html.Div(
+                                                        style={'marginTop': '12px', 'color': '#444', 'textAlign': 'center'},
+                                                        children=[
+                                                            html.P(
+                                                                "A small synthetic cohort for demo purposes with jittered values to protect privacy."
+                                                            )
+                                                        ]
+                                                    )
+                                                ],
+                                                style={'marginBottom': '24px', 'textAlign': 'center'}
+                                            ),
                                             html.Div(id='upload-status'),
                                             html.Div(id='field-selection-ui'),
                                         ]
@@ -1153,36 +1184,72 @@ app.layout = html.Div(
 @app.callback(
     [Output('uploaded-data', 'data'),
      Output('upload-status', 'children')],
-    [Input('upload-data', 'contents')],
+    [Input('upload-data', 'contents'),
+     Input('load-sample-data', 'n_clicks')],
     [State('upload-data', 'filename')]
 )
-def parse_contents(contents, filename):
+def parse_contents(contents, sample_clicks, filename):
+    ctx = dash.callback_context
+    triggered_component = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
+
+    # Handle sample data button
+    if triggered_component == 'load-sample-data' and sample_clicks:
+        try:
+            sample_path = os.path.join(os.path.dirname(__file__), 'assets', 'random_cohort_no_wound_jittered.csv')
+            df = pd.read_csv(sample_path)
+
+            # Basic data cleaning for sample data
+            for col in df.columns:
+                if "date" in col.lower():
+                    try:
+                        df[col] = pd.to_datetime(df[col]).dt.strftime("%Y/%m/%d")
+                    except:
+                        pass
+
+            # Ensure an index column exists
+            if df.index.name is None:
+                df.insert(loc=0, column='Row_ID', value=range(1, len(df) + 1))
+                df.set_index('Row_ID', inplace=True)
+
+            return df.to_dict('records'), html.Div([
+                html.H4("Loaded sample dataset: random_cohort_no_wound_jittered.csv"),
+                html.P(f"Data contains {len(df)} rows and {len(df.columns)} columns"),
+                html.P("✓ Automatic field type detection completed"),
+                html.P("✓ Default visualization values have been set"),
+                html.H5("Next: Review field types below and start exploring your data!")
+            ])
+        except Exception as e:
+            return None, html.Div([
+                html.H4("Error loading sample data"),
+                html.P(f"Could not load sample file. Error: {str(e)}")
+            ])
+
+    # Handle standard file upload
     if contents is None:
         return None, html.Div([
             html.H4("Please upload a CSV file to begin"),
             html.P("Drag and drop a CSV file above or click to select one.")
         ])
-    
+
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
-    
+
     try:
         df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        
+
         # Basic data cleaning
-        # Convert date columns to datetime format
         for col in df.columns:
             if "date" in col.lower():
                 try:
                     df[col] = pd.to_datetime(df[col]).dt.strftime("%Y/%m/%d")
                 except:
                     pass  # Skip if conversion fails
-        
+
         # Add an index column if none exists
         if df.index.name is None:
             df.insert(loc=0, column='Row_ID', value=range(1, len(df) + 1))
             df.set_index('Row_ID', inplace=True)
-        
+
         return df.to_dict('records'), html.Div([
             html.H4(f"Successfully uploaded: {filename}"),
             html.P(f"Data contains {len(df)} rows and {len(df.columns)} columns"),
