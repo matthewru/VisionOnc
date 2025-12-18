@@ -67,6 +67,7 @@ app.layout = html.Div(
         dcc.Store(id='uploaded-data'),
         dcc.Store(id='field-types'),
         dcc.Store(id='save-timestamp-store'),  # Add this new store
+			dcc.Store(id='is-sample-data'),
         html.Div(
             className="row",
             children=[
@@ -106,7 +107,7 @@ app.layout = html.Div(
                             className='custom-tabs-container', 
                             content_className='custom-tab-content',
                             colors={
-                                "border": "#d6d6d6",
+                                "border": "rgba(0,0,0,0)",
                                 "primary": "rgba(39, 116, 174, .9)",
                                 "background": "#f9f9f9"
                             },
@@ -208,6 +209,7 @@ app.layout = html.Div(
                                 # Middle Graph
                                 html.Div(
                                     className="eight columns div-for-charts bg-grey",
+                                    style={'border': 'none', 'boxShadow': 'none'},
                                     children=[        
                                         html.Br(),
 
@@ -269,6 +271,115 @@ app.layout = html.Div(
 
                                         ),                                                                                                                           
 
+                                        html.Br(),
+
+                                        html.H4("CSV Upload Requirements & Formatting:"),
+
+                                        html.Ul(children=[
+                                            html.Li([
+                                                html.Strong("File type: "),
+                                                "Comma-separated values (CSV), UTF-8 encoded, with a header row."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Dates: "),
+                                                "Use ISO format YYYY-MM-DD (recommended). Other common formats are parsed, but ISO is safest."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Patient identifier (optional but recommended): "),
+                                                "Include one of: ",
+                                                html.Code("Enrolled Patient #"),
+                                                ", ",
+                                                html.Code("Patient ID"),
+                                                ", ",
+                                                html.Code("PatientID"),
+                                                ", ",
+                                                html.Code("Patient Number"),
+                                                ". If missing, the row index will be used."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Map tab: "),
+                                                "Requires ",
+                                                html.Code("Zipcode"),
+                                                " (5-digit or ZIP+4). Non-US ZIPs may not geocode."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Overall Survival (OS): "),
+                                                "Expected columns: ",
+                                                html.Code("Surgery Date"),
+                                                ", ",
+                                                html.Code("Last follow up date"),
+                                                ", ",
+                                                html.Code("Date of Death"),
+                                                ", ",
+                                                html.Code("Survival"),
+                                                ". ",
+                                                "Allowed values for ",
+                                                html.Code("Survival"),
+                                                ": ",
+                                                html.Code("alive"),
+                                                ", ",
+                                                html.Code("dead"),
+                                                ", ",
+                                                html.Code("yes"),
+                                                ", ",
+                                                html.Code("no"),
+                                                ", ",
+                                                html.Code("not evaluable"),
+                                                " (case-insensitive)."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Local Failure (competing risks): "),
+                                                "Expected columns: ",
+                                                html.Code("Surgery Date"),
+                                                " (or ",
+                                                html.Code("End of RT Date"),
+                                                " as fallback), ",
+                                                html.Code("Last follow up Primary imaging Date"),
+                                                ", ",
+                                                html.Code("Local Recurrence"),
+                                                ", ",
+                                                html.Code("Local Recurrence Date"),
+                                                ", ",
+                                                html.Code("Survival"),
+                                                ", ",
+                                                html.Code("Date of Death"),
+                                                ". "
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Distant Failure (competing risks): "),
+                                                "Expected columns: ",
+                                                html.Code("Surgery Date"),
+                                                ", ",
+                                                html.Code("Last follow up date"),
+                                                ", ",
+                                                html.Code("Distant Recurrence?"),
+                                                ", ",
+                                                html.Code("Distant Recurrence Date"),
+                                                ", ",
+                                                html.Code("Survival"),
+                                                ", ",
+                                                html.Code("Date of Death"),
+                                                ". "
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Numeric columns: "),
+                                                "Provide clean numeric values (avoid units or symbols). The app will attempt to coerce text to numbers when possible."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Missing values: "),
+                                                "Leave blank if unknown; the app will handle missing values gracefully."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Imaging availability: "),
+                                                "Imaging thumbnails and the Imaging tab are available with the sample dataset only. ",
+                                                "When you upload your own CSV, imaging thumbnails are hidden in tooltips and the Imaging tab is disabled."
+                                            ]),
+                                            html.Li([
+                                                html.Strong("Column names are case-sensitive: "),
+                                                "Use the exact names shown above for survival analyses and mapping."
+                                            ]),
+                                        ]),
+
                                         html.Br(),                                        
 
                                         html.H4(
@@ -279,7 +390,7 @@ app.layout = html.Div(
                                             """, 
                                         ),    
 
-                                        html.Br(),                                        
+                                        html.Br(),
 
                                         html.P(
                                             """
@@ -296,6 +407,7 @@ app.layout = html.Div(
                                 # Right controls
                                 html.Div(
                                     className="four columns div-user-controls bg-grey-copy",
+                                    style={'border': 'none', 'borderLeft': '0', 'boxShadow': 'none'},
                                     children=[
 
                                         # Change to side-by-side for mobile layout
@@ -1182,8 +1294,9 @@ app.layout = html.Div(
 
 # File upload callback
 @app.callback(
-    [Output('uploaded-data', 'data'),
-     Output('upload-status', 'children')],
+	[Output('uploaded-data', 'data'),
+	 Output('upload-status', 'children'),
+	 Output('is-sample-data', 'data')],
     [Input('upload-data', 'contents'),
      Input('load-sample-data', 'n_clicks')],
     [State('upload-data', 'filename')]
@@ -1195,8 +1308,23 @@ def parse_contents(contents, sample_clicks, filename):
     # Handle sample data button
     if triggered_component == 'load-sample-data' and sample_clicks:
         try:
-            sample_path = os.path.join(os.path.dirname(__file__), 'assets', 'random_cohort_no_wound_jittered.csv')
-            df = pd.read_csv(sample_path)
+            # Try preferred/new sample names first, fall back to prior name if needed
+            assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
+            sample_candidates = [
+                '@random_sample_cohort_jittered.csv',
+                'random_sample_cohort_jittered.csv',
+                'random_cohort_no_wound_jittered.csv',
+            ]
+            chosen_path = None
+            for name in sample_candidates:
+                path = os.path.join(assets_dir, name)
+                if os.path.isfile(path):
+                    chosen_path = path
+                    break
+            if chosen_path is None:
+                raise FileNotFoundError("Could not find sample CSV in assets. Tried: " + ", ".join(sample_candidates))
+            
+            df = pd.read_csv(chosen_path)
 
             # Basic data cleaning for sample data
             for col in df.columns:
@@ -1212,24 +1340,24 @@ def parse_contents(contents, sample_clicks, filename):
                 df.set_index('Row_ID', inplace=True)
 
             return df.to_dict('records'), html.Div([
-                html.H4("Loaded sample dataset: random_cohort_no_wound_jittered.csv"),
+                html.H4(f"Loaded sample dataset: {os.path.basename(chosen_path)}"),
                 html.P(f"Data contains {len(df)} rows and {len(df.columns)} columns"),
                 html.P("✓ Automatic field type detection completed"),
                 html.P("✓ Default visualization values have been set"),
                 html.H5("Next: Review field types below and start exploring your data!")
-            ])
+            ]), True
         except Exception as e:
             return None, html.Div([
                 html.H4("Error loading sample data"),
                 html.P(f"Could not load sample file. Error: {str(e)}")
-            ])
+            ]), False
 
     # Handle standard file upload
     if contents is None:
         return None, html.Div([
             html.H4("Please upload a CSV file to begin"),
             html.P("Drag and drop a CSV file above or click to select one.")
-        ])
+        ]), False
 
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
@@ -1256,12 +1384,25 @@ def parse_contents(contents, sample_clicks, filename):
             html.P("✓ Automatic field type detection completed"),
             html.P("✓ Default visualization values have been set"),
             html.H5("Next: Review field types below and start exploring your data!")
-        ])
+        ]), False
     except Exception as e:
         return None, html.Div([
             html.H4("Error processing file"),
             html.P(f"Could not process {filename}. Error: {str(e)}")
-        ])
+        ]), False
+
+# Disable/gray Imaging tab and controls unless sample data is used
+@app.callback(
+	[Output('tab-10', 'disabled'),
+	 Output('tab-10', 'style'),
+	 Output('imaging-plane', 'disabled')],
+	[Input('is-sample-data', 'data')]
+)
+def toggle_imaging_availability(is_sample):
+	disabled = not bool(is_sample)
+	base_style = {'padding': '12px 18px'}
+	style = {**base_style, **({'opacity': 0.4, 'pointerEvents': 'none'} if disabled else {})}
+	return disabled, style, disabled
 
 # Field type selection callback
 @app.callback(
@@ -1584,17 +1725,39 @@ def convert_to_numeric(data, column):
         
         # If all values are NaN but the column has data, try string extraction
         if result.isna().all() and not data[column].isna().all():
-            # Try to extract numbers from strings
-            string_data = data[column].astype(str)
-            # Extract first number found in each cell
-            extracted = string_data.str.extract(r'([-+]?\d*\.?\d+)').astype(float)
-            if not extracted[0].isna().all():
-                result = extracted[0]
+            # Clean common thousand separators and stray characters, then retry
+            string_data = data[column].astype(str).str.strip()
+            cleaned = string_data.str.replace(',', '', regex=False)
+            # Retry numeric parse
+            retry = pd.to_numeric(cleaned, errors='coerce')
+            if not retry.isna().all():
+                result = retry
+            else:
+                # Extract first number found in each cell as last fallback
+                extracted = string_data.str.extract(r'([-+]?\d*\.?\d+)').astype(float)
+                if not extracted[0].isna().all():
+                    result = extracted[0]
         
         return result
     except:
         # If all else fails, return a series of NaN values with the same index
         return pd.Series([np.nan] * len(data), index=data.index)
+
+# Helper to select a patient identifier column robustly
+def select_patient_id(dataframe: pd.DataFrame) -> pd.Series:
+    candidate_columns = [
+        'Enrolled Patient #',
+        'Patient ID',
+        'PatientID',
+        'Patient Number',
+        'Patient',
+        'ID'
+    ]
+    for col in candidate_columns:
+        if col in dataframe.columns:
+            return dataframe[col].astype(str)
+    # Fallback to stringified index
+    return pd.Series(dataframe.index.astype(str), index=dataframe.index)
 
 # Scatter plot callback
 @app.callback(
@@ -1714,8 +1877,7 @@ def compute(xAxis, yAxis, colorAxis, sizeAxis, dataInds, uploaded_data):
     y_data = y_data[valid_mask]
     color_data = color_data[valid_mask]
     size_data = size_data[valid_mask]
-    patient_ids = data.get('Enrolled Patient #', data.index)
-    patient_ids = patient_ids[valid_mask]
+    patient_ids = select_patient_id(data)[valid_mask]
 
     # Fill any remaining NaN values in color/size data
     color_data = color_data.fillna(0)
@@ -1759,16 +1921,17 @@ def compute(xAxis, yAxis, colorAxis, sizeAxis, dataInds, uploaded_data):
 
 # hover callback
 @app.callback(
-    Output("scatter-tooltip", "show"),
-    Output("scatter-tooltip", "bbox"),
-    Output("scatter-tooltip", "children"),
-    [Input("scatter-plot", "hoverData"),
-     Input('x-dropdown', 'value'),
-     Input('y-dropdown', 'value'),
-     Input('color-dropdown', 'value'),
-     Input('size-dropdown', 'value'),]   
+	Output("scatter-tooltip", "show"),
+	Output("scatter-tooltip", "bbox"),
+	Output("scatter-tooltip", "children"),
+	[Input("scatter-plot", "hoverData"),
+	 Input('x-dropdown', 'value'),
+	 Input('y-dropdown', 'value'),
+	 Input('color-dropdown', 'value'),
+	 Input('size-dropdown', 'value'),
+	 Input('is-sample-data', 'data')]	
 )
-def display_hover(hoverData, x_axis, y_axis, color_axis, size_axis):
+def display_hover(hoverData, x_axis, y_axis, color_axis, size_axis, is_sample):
     if hoverData is None:
         return False, no_update, no_update
  
@@ -1807,83 +1970,55 @@ def display_hover(hoverData, x_axis, y_axis, color_axis, size_axis):
                 print(f"Error loading image {path}: {str(e)}")
                 return None
 
-        axial_img = load_and_resize_image(axial_path)
-        coronal_img = load_and_resize_image(coronal_path)
-        sagittal_img = load_and_resize_image(sagittal_path)
+        # Only load real images for sample data; otherwise use placeholders (grayed)
+        if bool(is_sample):
+            axial_img = load_and_resize_image(axial_path)
+            coronal_img = load_and_resize_image(coronal_path)
+            sagittal_img = load_and_resize_image(sagittal_path)
+        else:
+            axial_img = None
+            coronal_img = None
+            sagittal_img = None
 
-        # Create a div with the patient info and images
+        # Create a div with the patient info and (only for sample data) images
         children = [
-            html.Div([
-                html.Div([
-                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+            html.Div(
+                [
                     html.Div([
-                        html.P([
-                            html.Strong(f"{x_axis}: "),
-                            f"{x_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{y_axis}: "),
-                            f"{y_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{color_axis}: "),
-                            f"{color_val}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{size_axis}: "),
-                            f"{size_val}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                        html.Div([
+                            html.P([html.Strong(f"{x_axis}: "), f"{x_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{y_axis}: "), f"{y_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{color_axis}: "), f"{color_val}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{size_axis}: "), f"{size_val}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        ], style={'marginBottom': '5px'}),
                     ], style={'marginBottom': '5px'}),
-                ], style={'marginBottom': '5px'}),
-                
-                # Images in a row
-                html.Div([
+                ] + ([
                     html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                ], style={'textAlign': 'center'}),
-            ], style={
-                'backgroundColor': 'white',
-                'padding': '5px',
-                'border': '1px solid red',
-                'borderRadius': '3px',
-                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-                'zIndex': '10000',
-                'position': 'absolute'
-            })
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{axial_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{coronal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{sagittal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    ], style={'textAlign': 'center'})
+                ] if bool(is_sample) else []),
+                style={
+                    'backgroundColor': 'white',
+                    'padding': '5px',
+                    'border': '1px solid red',
+                    'borderRadius': '3px',
+                    'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                    'zIndex': '10000',
+                    'position': 'absolute'
+                }
+            )
         ]
         return True, bbox, children
     except Exception as e:
@@ -2123,8 +2258,7 @@ def display_box(xAxis, yAxis, dataInds, uploaded_data):
 
     x_data = x_data[valid_mask]
     y_data = y_data[valid_mask]
-    patient_ids = data.get('Enrolled Patient #', data.index)
-    patient_ids = patient_ids[valid_mask]
+    patient_ids = select_patient_id(data)[valid_mask]
 
     xLabels = np.repeat(xAxis, len(x_data))
     yLabels = np.repeat(yAxis, len(y_data))
@@ -2223,17 +2357,31 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
         data = df.iloc[dataInds, :]
 
     if yAxis == "Overall Survival":
+        # Validate required columns for Overall Survival
+        required_cols = ['Surgery Date', 'Last follow up date', 'Date of Death', 'Survival']
+        missing_cols = [c for c in required_cols if c not in data.columns]
+        if missing_cols:
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="Missing required columns for Overall Survival: " + ", ".join(missing_cols),
+                x=0.5, y=0.55, xref="paper", yref="paper", showarrow=False, font=dict(size=18, color="red")
+            )
+            fig.add_annotation(
+                text="Please include these columns or switch the Y-axis to a survival outcome your data supports.",
+                x=0.5, y=0.45, xref="paper", yref="paper", showarrow=False, font=dict(size=14, color=uclaBlue)
+            )
+            return fig, 'Days: Missing columns', 'Patients: N/A', 'Events: N/A'
         dataTimes = data['Last follow up date']
         dataEventDates = data['Date of Death']
         dataEvents = data['Survival']
 
         # get follow up time in Days  
-        times = pd.to_datetime(dataTimes) - pd.to_datetime(data['Surgery Date'])
+        times = pd.to_datetime(dataTimes, errors='coerce') - pd.to_datetime(data['Surgery Date'], errors='coerce')
         times = times.dt.days
         fuDays = times[times>0]
 
         # find event times in days 
-        eventTimes = pd.to_datetime(dataEventDates) - pd.to_datetime(data['Surgery Date'])
+        eventTimes = pd.to_datetime(dataEventDates, errors='coerce') - pd.to_datetime(data['Surgery Date'], errors='coerce')
         eventTimes = eventTimes.dt.days
         eventDays = eventTimes[eventTimes>0]
 
@@ -2314,6 +2462,26 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
                             showlegend=True,
                         ),
                     )
+                    # Add confidence interval shading for each group
+                    try:
+                        lower_col = f"{str(cat)}_lower_0.95"
+                        upper_col = f"{str(cat)}_upper_0.95"
+                        if lower_col in km.confidence_interval_.columns and upper_col in km.confidence_interval_.columns:
+                            ci_times = np.concatenate((km.survival_function_.index, km.survival_function_.index[::-1]), axis=0)
+                            ci_vals = np.concatenate((km.confidence_interval_[lower_col].values, km.confidence_interval_[upper_col].values[::-1]), axis=0)
+                            survFig.add_trace(
+                                go.Scatter(
+                                    x=ci_times,
+                                    y=ci_vals,
+                                    fill='toself',
+                                    fillcolor='rgba(100,0,80,0.2)',
+                                    line=dict(color='rgba(255,255,255,0)'),
+                                    hoverinfo="skip",
+                                    showlegend=False
+                                )
+                            )
+                    except Exception:
+                        pass
         else:
             km = KaplanMeierFitter()
             km.fit(durations=fuDays, event_observed=events, label="Group 1")
@@ -2359,6 +2527,26 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
         eventStrDisp = 'Deaths: {}'.format(len(events[events==1]))
 
     elif yAxis == "Local Failure":
+        # Validate required columns for Local Failure (competing risks)
+        base_required = ['Last follow up Primary imaging Date', 'Local Recurrence', 'Local Recurrence Date', 'Survival', 'Date of Death']
+        missing_cols = [c for c in base_required if c not in data.columns]
+        has_surg_or_rt = ('Surgery Date' in data.columns) or ('End of RT Date' in data.columns)
+        if missing_cols or not has_surg_or_rt:
+            msg_items = []
+            if missing_cols:
+                msg_items.append("Missing: " + ", ".join(missing_cols))
+            if not has_surg_or_rt:
+                msg_items.append("Provide 'Surgery Date' or 'End of RT Date'")
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="Missing required columns for Local Failure: " + "; ".join(msg_items),
+                x=0.5, y=0.55, xref="paper", yref="paper", showarrow=False, font=dict(size=18, color="red")
+            )
+            fig.add_annotation(
+                text="Please include the required fields or choose a different survival outcome.",
+                x=0.5, y=0.45, xref="paper", yref="paper", showarrow=False, font=dict(size=14, color=uclaBlue)
+            )
+            return fig, 'Days: Missing columns', 'Patients: N/A', 'Events: N/A'
         data = data.dropna(subset=['Last follow up Primary imaging Date'])
 
         # if no surgery date, set end of RT to surgery date
@@ -2372,19 +2560,20 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
         dataDeathDates = data['Date of Death']
         dataDeaths = data['Survival']
 
-        # get follow up time in Days  
-        times = pd.to_datetime(dataTimes) - pd.to_datetime(data['Surgery Date'])
+        # Clean and standardize date fields (strip blanks -> NaT) then get follow up time in Days
+        sdate = pd.to_datetime(data['Surgery Date'].astype(str).str.strip().replace('', np.nan), errors='coerce')
+        times = pd.to_datetime(dataTimes.astype(str).str.strip().replace('', np.nan), errors='coerce') - sdate
         times = times.dt.days
         fuDays = times.copy()
         fuDays = fuDays[times>0]
 
         # find event times in days 
-        eventTimes = pd.to_datetime(dataEventDates) - pd.to_datetime(data['Surgery Date'])
+        eventTimes = pd.to_datetime(dataEventDates.astype(str).str.strip().replace('', np.nan), errors='coerce') - sdate
         eventTimes = eventTimes.dt.days
         eventDays = eventTimes[eventTimes>0]
 
         # find death time in days 
-        deathTimes = pd.to_datetime(dataDeathDates) - pd.to_datetime(data['Surgery Date'])
+        deathTimes = pd.to_datetime(dataDeathDates.astype(str).str.strip().replace('', np.nan), errors='coerce') - sdate
         deathTimes = deathTimes.dt.days
         deathDays = deathTimes[deathTimes>0]
 
@@ -2399,13 +2588,13 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
             'dead': 2,
             'alive': 0,
         }
-        events = dataEvents.str.lower()
+        events = dataEvents.astype(str).str.strip().str.lower()
         events = events.map(d)
         events = events.fillna(0)
         events = events[times>0]
 
         # code the deaths
-        deaths = dataDeaths.str.lower()
+        deaths = dataDeaths.astype(str).str.strip().str.lower()
         deaths = deaths.map(d)
         deaths = deaths.fillna(0)
         deaths = deaths[deathTimes>0]
@@ -2476,6 +2665,26 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
                             showlegend=True,
                         ),
                     )
+                # Add confidence interval shading for each group
+                try:
+                    ci_times = np.concatenate((ajf.cumulative_density_.index, ajf.cumulative_density_.index[::-1]), axis=0)
+                    # AJF CI columns are consistent irrespective of label
+                    lower_vals = ajf.confidence_interval_['AJ_estimate_lower_0.95'].values
+                    upper_vals = ajf.confidence_interval_['AJ_estimate_upper_0.95'].values
+                    ci_vals = np.concatenate((lower_vals, upper_vals[::-1]), axis=0)
+                    survFig.add_trace(
+                        go.Scatter(
+                            x=ci_times,
+                            y=ci_vals,
+                            fill='toself',
+                            fillcolor='rgba(100,0,80,0.2)',
+                            line=dict(color='rgba(255,255,255,0)'),
+                            hoverinfo="skip",
+                            showlegend=False
+                        )
+                    )
+                except Exception:
+                    pass
         else:
             ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
             ajf.fit(durations=fuDays, event_observed=events, event_of_interest=1)
@@ -2521,6 +2730,20 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
         eventStrDisp = 'Local Failures: {}'.format(len(events[events==1])) + ', Deaths: {}'.format(len(events[events==2]))        
 
     elif yAxis == "Distant Failure":
+        # Validate required columns for Distant Failure (competing risks)
+        required_cols = ['Surgery Date', 'Last follow up date', 'Distant Recurrence?', 'Distant Recurrence Date', 'Survival', 'Date of Death']
+        missing_cols = [c for c in required_cols if c not in data.columns]
+        if missing_cols:
+            fig = go.Figure(layout=layout)
+            fig.add_annotation(
+                text="Missing required columns for Distant Failure: " + ", ".join(missing_cols),
+                x=0.5, y=0.55, xref="paper", yref="paper", showarrow=False, font=dict(size=18, color="red")
+            )
+            fig.add_annotation(
+                text="Please include these columns or switch the Y-axis to a survival outcome your data supports.",
+                x=0.5, y=0.45, xref="paper", yref="paper", showarrow=False, font=dict(size=14, color=uclaBlue)
+            )
+            return fig, 'Days: Missing columns', 'Patients: N/A', 'Events: N/A'
         data = data.dropna(subset=['Last follow up Distant Imaging Date'])
 
         # if no surgery date, set end of RT to surgery date
@@ -2535,18 +2758,18 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
         dataDeaths = data['Survival']
 
         # get follow up time in Days  
-        times = pd.to_datetime(dataTimes) - pd.to_datetime(data['Surgery Date'])
+        times = pd.to_datetime(dataTimes, errors='coerce') - pd.to_datetime(data['Surgery Date'], errors='coerce')
         times = times.dt.days
         fuDays = times.copy()
         fuDays = fuDays[times>0]
 
         # find event times in days 
-        eventTimes = pd.to_datetime(dataEventDates) - pd.to_datetime(data['Surgery Date'])
+        eventTimes = pd.to_datetime(dataEventDates, errors='coerce') - pd.to_datetime(data['Surgery Date'], errors='coerce')
         eventTimes = eventTimes.dt.days
         eventDays = eventTimes[eventTimes>0]
 
         # find death time in days 
-        deathTimes = pd.to_datetime(dataDeathDates) - pd.to_datetime(data['Surgery Date'])
+        deathTimes = pd.to_datetime(dataDeathDates, errors='coerce') - pd.to_datetime(data['Surgery Date'], errors='coerce')
         deathTimes = deathTimes.dt.days
         deathDays = deathTimes[deathTimes>0]
 
@@ -2639,6 +2862,25 @@ def display_surv(yAxis, groupAxis, dataInds, uploaded_data):
                             showlegend=True,
                         ),
                     )
+                # Add confidence interval shading for each group
+                try:
+                    ci_times = np.concatenate((ajf.cumulative_density_.index, ajf.cumulative_density_.index[::-1]), axis=0)
+                    lower_vals = ajf.confidence_interval_['AJ_estimate_lower_0.95'].values
+                    upper_vals = ajf.confidence_interval_['AJ_estimate_upper_0.95'].values
+                    ci_vals = np.concatenate((lower_vals, upper_vals[::-1]), axis=0)
+                    survFig.add_trace(
+                        go.Scatter(
+                            x=ci_times,
+                            y=ci_vals,
+                            fill='toself',
+                            fillcolor='rgba(100,0,80,0.2)',
+                            line=dict(color='rgba(255,255,255,0)'),
+                            hoverinfo="skip",
+                            showlegend=False
+                        )
+                    )
+                except Exception:
+                    pass
         else:
             ajf = AalenJohansenFitter(calculate_variance=True, jitter_level=0.01)
             ajf.fit(durations=fuDays, event_observed=events, event_of_interest=1)
@@ -2782,22 +3024,24 @@ def display_map(dataInds, uploaded_data):
 
     fig = go.Figure(layout=layout)
 
-    # Use available columns for text display
-    text_cols = []
-    if 'Enrolled Patient #' in data_valid.columns:
-        text_cols.append(data_valid['Enrolled Patient #'].astype(str))
-    if 'Histology on Surgery' in data_valid.columns:
-        text_cols.append(data_valid['Histology on Surgery'].astype(str))
-    if 'Tumor Surgery Size' in data_valid.columns:
-        text_cols.append('Size: ' + data_valid['Tumor Surgery Size'].astype(str))
-    
-    if text_cols:
-        # Properly concatenate the Series with separators
-        data_valid['mapText'] = text_cols[0]
-        for i in range(1, len(text_cols)):
-            data_valid['mapText'] = data_valid['mapText'] + ': ' + text_cols[i]
+    # Dynamically choose up to two descriptive columns for display (excluding ID/Zip/coords)
+    id_colnames = ['Enrolled Patient #', 'Patient ID', 'PatientID', 'Patient Number', 'Patient', 'ID']
+    exclude_cols = set(['latitude', 'longitude', 'Zipcode'])
+    display_candidates = [c for c in data_valid.columns if c not in exclude_cols and c not in id_colnames]
+    chosen_cols = display_candidates[:2]
+
+    # Build map text per row using chosen columns (fallback to patient id if none)
+    pid_series = select_patient_id(data_valid).astype(str)
+    if len(chosen_cols) == 0:
+        data_valid['mapText'] = 'Patient ' + pid_series
     else:
-        data_valid['mapText'] = 'Patient Data'
+        def build_map_text(row):
+            parts = []
+            for col in chosen_cols:
+                val = row[col]
+                parts.append(f"{col}: {val}")
+            return ' | '.join(parts)
+        data_valid['mapText'] = data_valid.apply(build_map_text, axis=1)
 
     fig.add_trace(
         go.Scattergeo(
@@ -2807,9 +3051,13 @@ def display_map(dataInds, uploaded_data):
         mode = 'markers',
         marker_color = 'orange',  
         marker_size = 8,  
-        customdata = np.stack((data_valid.get('Tumor Surgery Size', ['N/A']*len(data_valid)), 
-                              data_valid.get('Histology on Surgery', ['N/A']*len(data_valid)), 
-                              data_valid.get('Enrolled Patient #', data_valid.index)), axis=-1),
+        customdata = np.stack((
+                              data_valid[chosen_cols[0]].astype(str) if len(chosen_cols) > 0 else pd.Series([''] * len(data_valid), index=data_valid.index),
+                              data_valid[chosen_cols[1]].astype(str) if len(chosen_cols) > 1 else pd.Series([''] * len(data_valid), index=data_valid.index),
+                              pid_series,
+                              pd.Series([chosen_cols[0] if len(chosen_cols) > 0 else ''] * len(data_valid), index=data_valid.index),
+                              pd.Series([chosen_cols[1] if len(chosen_cols) > 1 else ''] * len(data_valid), index=data_valid.index)
+                             ), axis=-1),
         hoverinfo='none'
         ),
     )
@@ -2833,9 +3081,10 @@ def display_map(dataInds, uploaded_data):
     Output("map-tooltip", "show"),
     Output("map-tooltip", "bbox"),
     Output("map-tooltip", "children"),
-    [Input("map-plot", "hoverData")]
+	[Input("map-plot", "hoverData"),
+	 Input('is-sample-data', 'data')]
 )
-def display_map_hover(hoverData):
+def display_map_hover(hoverData, is_sample):
     if hoverData is None:
         return False, no_update, no_update
  
@@ -2843,8 +3092,10 @@ def display_map_hover(hoverData):
     hover_data = hoverData["points"][0]
     bbox = hover_data["bbox"]
     pt_id = hover_data["customdata"][2]  # Patient ID is stored in customdata[2]
-    tumor_size = hover_data["customdata"][0]
-    histology = hover_data["customdata"][1]
+    col1_val = hover_data["customdata"][0]
+    col2_val = hover_data["customdata"][1]
+    col1_name = hover_data["customdata"][3] if len(hover_data["customdata"]) > 3 else ""
+    col2_name = hover_data["customdata"][4] if len(hover_data["customdata"]) > 4 else ""
 
     try:
         # Create paths for each image
@@ -2866,75 +3117,53 @@ def display_map_hover(hoverData):
                 print(f"Error loading image {path}: {str(e)}")
                 return None
 
-        axial_img = load_and_resize_image(axial_path)
-        coronal_img = load_and_resize_image(coronal_path)
-        sagittal_img = load_and_resize_image(sagittal_path)
+        # Only load real images for sample data; otherwise use placeholders (grayed)
+        if bool(is_sample):
+            axial_img = load_and_resize_image(axial_path)
+            coronal_img = load_and_resize_image(coronal_path)
+            sagittal_img = load_and_resize_image(sagittal_path)
+        else:
+            axial_img = None
+            coronal_img = None
+            sagittal_img = None
 
-        # Create a div with the patient info and images
+        # Create a div with the patient info and (only for sample data) images
         children = [
-            html.Div([
-                html.Div([
-                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+            html.Div(
+                [
                     html.Div([
-                        html.P([
-                            html.Strong("Tumor Size: "),
-                            f"{tumor_size}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong("Histology: "),
-                            f"{histology}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                        html.Div([
+                            html.P([html.Strong(f"{col1_name}: "), f"{col1_val}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}) if col1_name else html.Span(),
+                            html.P([html.Strong(f"{col2_name}: "), f"{col2_val}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}) if col2_name else html.Span(),
+                        ], style={'marginBottom': '5px'}),
                     ], style={'marginBottom': '5px'}),
-                ], style={'marginBottom': '5px'}),
-                
-                # Images in a row
-                html.Div([
+                ] + ([
                     html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                ], style={'textAlign': 'center'}),
-            ], style={
-                'backgroundColor': 'white',
-                'padding': '5px',
-                'border': '1px solid red',
-                'borderRadius': '3px',
-                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-                'zIndex': '10000',
-                'position': 'absolute'
-            })
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{axial_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{coronal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{sagittal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    ], style={'textAlign': 'center'})
+                ] if bool(is_sample) else []),
+                style={
+                    'backgroundColor': 'white',
+                    'padding': '5px',
+                    'border': '1px solid red',
+                    'borderRadius': '3px',
+                    'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                    'zIndex': '10000',
+                    'position': 'absolute'
+                }
+            )
         ]
         return True, bbox, children
     except Exception as e:
@@ -3161,19 +3390,37 @@ def display_swimmer(dataInds, uploaded_data):
 
 # imaging plots
 @app.callback(
-    Output("imaging-plot", "figure"), 
-    [
-    Input('table-filters', 'derived_virtual_indices'),
-    Input("imaging-plane", "value"),
-    Input('uploaded-data', 'data')
-    ])
-def display_image(dataInds, imagePlane, uploaded_data):
+	Output("imaging-plot", "figure"), 
+	[
+	Input('table-filters', 'derived_virtual_indices'),
+	Input("imaging-plane", "value"),
+	Input('uploaded-data', 'data'),
+	Input('is-sample-data', 'data')
+	])
+def display_image(dataInds, imagePlane, uploaded_data, is_sample):
     
     if uploaded_data is None:
         # Return empty figure if no data uploaded
         fig = go.Figure()
         fig.add_annotation(
             text="Please upload data to view imaging",
+            x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False, font=dict(size=16)
+        )
+        fig.update_layout(
+            showlegend=False,
+            plot_bgcolor="white",
+            margin=dict(t=10,l=10,b=10,r=10),
+            hovermode=False,
+            width=800,
+            height=600,
+        )
+        return fig
+    
+    # Gate imaging to sample data only
+    if not bool(is_sample):
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Imaging is available with the sample dataset only",
             x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False, font=dict(size=16)
         )
         fig.update_layout(
@@ -3340,7 +3587,7 @@ def update_3d_plot(x_col, y_col, z_col, color_col, size_col, uploaded_data):
     else:
         size_data = pd.Series([8] * len(df), index=df.index)  # Default size
     
-    patient_ids = df.get('Enrolled Patient #', df.index)
+    patient_ids = select_patient_id(df)
 
     # Create mask for valid numeric values - only require X, Y, Z to be valid
     xyz_mask = ~(x_data.isna() | y_data.isna() | z_data.isna())
@@ -3479,9 +3726,10 @@ def update_3d_plot(x_col, y_col, z_col, color_col, size_col, uploaded_data):
      Input("z-3d-dropdown", "value"),
      Input("color-3d-dropdown", "value"),
      Input("size-3d-dropdown", "value"),
-     Input('uploaded-data', 'data')]
+	 Input('uploaded-data', 'data'),
+	 Input('is-sample-data', 'data')]
 )
-def display_3d_hover(hoverData, x_axis, y_axis, z_axis, color_axis, size_axis, uploaded_data):
+def display_3d_hover(hoverData, x_axis, y_axis, z_axis, color_axis, size_axis, uploaded_data, is_sample):
     if hoverData is None or uploaded_data is None:
         return False, no_update, no_update
     
@@ -3501,22 +3749,17 @@ def display_3d_hover(hoverData, x_axis, y_axis, z_axis, color_axis, size_axis, u
             size_val = hover_data["customdata"][0]
             color_val = hover_data["customdata"][1]
         else:
-            # Fallback: try to look up in the dataframe by patient ID
+            # Fallback: look up by robust patient identifier (string compare)
             try:
-                # First try to find the row with this patient ID
-                if 'Enrolled Patient #' in df.columns:
-                    patient_row = df[df['Enrolled Patient #'] == pt_id]
-                    if not patient_row.empty:
-                        color_val = patient_row[color_axis].iloc[0]
-                        size_val = patient_row[size_axis].iloc[0]
-                    else:
-                        color_val = "N/A"
-                        size_val = "N/A"
+                pid_series = select_patient_id(df).astype(str)
+                match_rows = df.loc[pid_series == str(pt_id)]
+                if not match_rows.empty and color_axis in match_rows.columns and size_axis in match_rows.columns:
+                    color_val = match_rows[color_axis].iloc[0]
+                    size_val = match_rows[size_axis].iloc[0]
                 else:
-                    # Use index lookup
-                    color_val = df.loc[pt_id, color_axis]
-                    size_val = df.loc[pt_id, size_axis]
-            except (KeyError, IndexError):
+                    color_val = "N/A"
+                    size_val = "N/A"
+            except Exception:
                 color_val = "N/A"
                 size_val = "N/A"
     except Exception:
@@ -3549,87 +3792,56 @@ def display_3d_hover(hoverData, x_axis, y_axis, z_axis, color_axis, size_axis, u
                 print(f"Error loading image {path}: {str(e)}")
                 return None
 
-        axial_img = load_and_resize_image(axial_path)
-        coronal_img = load_and_resize_image(coronal_path)
-        sagittal_img = load_and_resize_image(sagittal_path)
+        # Only load real images for sample data; otherwise use placeholders (grayed)
+        if bool(is_sample):
+            axial_img = load_and_resize_image(axial_path)
+            coronal_img = load_and_resize_image(coronal_path)
+            sagittal_img = load_and_resize_image(sagittal_path)
+        else:
+            axial_img = None
+            coronal_img = None
+            sagittal_img = None
 
-        # Create a div with the patient info and images
+        # Create a div with the patient info and (only for sample data) images
         children = [
-            html.Div([
-                html.Div([
-                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+            html.Div(
+                [
                     html.Div([
-                        html.P([
-                            html.Strong(f"{x_axis}: "),
-                            f"{x_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{y_axis}: "),
-                            f"{y_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{z_axis}: "),
-                            f"{z_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{color_axis}: "),
-                            f"{color_val}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{size_axis}: "),
-                            f"{size_val}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                        html.Div([
+                            html.P([html.Strong(f"{x_axis}: "), f"{x_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{y_axis}: "), f"{y_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{z_axis}: "), f"{z_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{color_axis}: "), f"{color_val}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{size_axis}: "), f"{size_val}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        ], style={'marginBottom': '5px'}),
                     ], style={'marginBottom': '5px'}),
-                ], style={'marginBottom': '5px'}),
-                
-                # Images in a row
-                html.Div([
+                ] + ([
                     html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                ], style={'textAlign': 'center'}),
-            ], style={
-                'backgroundColor': 'white',
-                'padding': '5px',
-                'border': '1px solid red',
-                'borderRadius': '3px',
-                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-                'zIndex': '10000',
-                'position': 'absolute'
-            })
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{axial_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{coronal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{sagittal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    ], style={'textAlign': 'center'})
+                ] if bool(is_sample) else []),
+                style={
+                    'backgroundColor': 'white',
+                    'padding': '5px',
+                    'border': '1px solid red',
+                    'borderRadius': '3px',
+                    'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                    'zIndex': '10000',
+                    'position': 'absolute'
+                }
+            )
         ]
         return True, bbox, children
     except Exception as e:
@@ -3661,9 +3873,10 @@ def display_3d_hover(hoverData, x_axis, y_axis, z_axis, color_axis, size_axis, u
     Output("box-tooltip", "children"),
     [Input("box-plot", "hoverData"),
      Input('x-box', 'value'),
-     Input('y-box', 'value')]
+     Input('y-box', 'value'),
+     Input('is-sample-data', 'data')]
 )
-def display_box_hover(hoverData, x_axis, y_axis):
+def display_box_hover(hoverData, x_axis, y_axis, is_sample):
     if hoverData is None:
         return False, no_update, no_update
  
@@ -3694,75 +3907,53 @@ def display_box_hover(hoverData, x_axis, y_axis):
                 print(f"Error loading image {path}: {str(e)}")
                 return None
 
-        axial_img = load_and_resize_image(axial_path)
-        coronal_img = load_and_resize_image(coronal_path)
-        sagittal_img = load_and_resize_image(sagittal_path)
+        # Only load real images for sample data; otherwise use placeholders (grayed)
+        if bool(is_sample):
+            axial_img = load_and_resize_image(axial_path)
+            coronal_img = load_and_resize_image(coronal_path)
+            sagittal_img = load_and_resize_image(sagittal_path)
+        else:
+            axial_img = None
+            coronal_img = None
+            sagittal_img = None
 
-        # Create a div with the patient info and images
+        # Create a div with the patient info and (only for sample data) images
         children = [
-            html.Div([
-                html.Div([
-                    html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+            html.Div(
+                [
                     html.Div([
-                        html.P([
-                            html.Strong(f"{x_axis}: "),
-                            f"{x_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                        html.P([
-                            html.Strong(f"{y_axis}: "),
-                            f"{y_val:.2f}"
-                        ], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
+                        html.Div([
+                            html.P([html.Strong(f"{x_axis}: "), f"{x_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{y_axis}: "), f"{y_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                        ], style={'marginBottom': '5px'}),
                     ], style={'marginBottom': '5px'}),
-                ], style={'marginBottom': '5px'}),
-                
-                # Images in a row
-                html.Div([
+                ] + ([
                     html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{axial_img}' if axial_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{coronal_img}' if coronal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                    html.Div([
-                        html.Img(
-                            src=f'data:image/png;base64,{sagittal_img}' if sagittal_img else 'assets/imagePlaceholder.png',
-                            style={
-                                "width": "50px",
-                                'display': 'block',
-                                'margin': '2px auto',
-                                'border': '1px solid black'
-                            }
-                        ),
-                        html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
-                    ], style={'display': 'inline-block', 'margin': '0 2px'}),
-                ], style={'textAlign': 'center'}),
-            ], style={
-                'backgroundColor': 'white',
-                'padding': '5px',
-                'border': '1px solid red',
-                'borderRadius': '3px',
-                'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
-                'zIndex': '10000',
-                'position': 'absolute'
-            })
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{axial_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Axial", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{coronal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Coronal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                        html.Div([
+                            html.Img(src=f'data:image/png;base64,{sagittal_img}', style={"width": "50px", 'display': 'block', 'margin': '2px auto', 'border': '1px solid black'}),
+                            html.P("Sagittal", style={'textAlign': 'center', 'color': 'black', 'margin': '1px', 'fontSize': '10px'}),
+                        ], style={'display': 'inline-block', 'margin': '0 2px'}),
+                    ], style={'textAlign': 'center'})
+                ] if bool(is_sample) else []),
+                style={
+                    'backgroundColor': 'white',
+                    'padding': '5px',
+                    'border': '1px solid red',
+                    'borderRadius': '3px',
+                    'boxShadow': '0 0 5px rgba(0,0,0,0.2)',
+                    'zIndex': '10000',
+                    'position': 'absolute'
+                }
+            )
         ]
         return True, bbox, children
     except Exception as e:
