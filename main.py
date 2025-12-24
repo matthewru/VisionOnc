@@ -36,7 +36,7 @@ app = dash.Dash(
 )
 server = app.server
 
-app.title = 'Clinical Trial Dynamic Data Visualization'
+app.title = 'VisionOnc'
 
 # set up a min max scaler
 min_max_scaler = preprocessing.MinMaxScaler(feature_range=(50,500))
@@ -90,7 +90,7 @@ app.layout = html.Div(
                 html.Div(
                     className="six columns div-for-title bg-grey",
                     children=[
-                        html.H1("Clinical Trial Dynamic Data Visualization"),
+                        html.H1("VisionOnc"),
                     ]
                 )
             ]
@@ -213,7 +213,7 @@ app.layout = html.Div(
                                     children=[        
                                         html.Br(),
 
-                                        html.H4("Interactive Data Visualization Tool:"),
+                                        html.H4("VisionOnc"),
 
                                         html.P(
                                             """

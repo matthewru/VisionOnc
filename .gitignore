@@ -1,2 +1,4 @@
 /assets
 /token.txt
+.venv/
+.python-version
