@@ -832,10 +832,11 @@ app.layout = html.Div(
                                 # Middle Graph
                                 html.Div(
                                     className="six columns div-for-charts bg-grey",
+                                    style={'position': 'relative'},
                                     children=[        
                                         html.Br(),
 
-                                        dcc.Graph(id="box-plot"),
+                                        dcc.Graph(id="box-plot", clear_on_unhover=True, style={'position': 'relative'}),
                                         dcc.Tooltip(
                                             id="box-tooltip", 
                                             direction='right', 
@@ -3887,6 +3888,18 @@ def display_box_hover(hoverData, x_axis, y_axis, is_sample):
     x_val = hover_data["x"]
     y_val = hover_data["y"]
 
+    # Prepare safe display strings (x may be categorical)
+    def format_value(value):
+        # Treat numpy scalars and python numbers as numeric
+        if isinstance(value, (int, float, np.integer, np.floating)):
+            try:
+                return f"{float(value):.2f}"
+            except Exception:
+                return str(value)
+        return str(value)
+    x_display = format_value(x_val)
+    y_display = format_value(y_val)
+
     try:
         # Create paths for each image
         basePath = 'assets/Captures_Nums_small/'
@@ -3924,8 +3937,8 @@ def display_box_hover(hoverData, x_axis, y_axis, is_sample):
                     html.Div([
                         html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'marginBottom': '5px', 'fontSize': '14px'}),
                         html.Div([
-                            html.P([html.Strong(f"{x_axis}: "), f"{x_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                            html.P([html.Strong(f"{y_axis}: "), f"{y_val:.2f}"], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{x_axis}: "), x_display], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                            html.P([html.Strong(f"{y_axis}: "), y_display], style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
                         ], style={'marginBottom': '5px'}),
                     ], style={'marginBottom': '5px'}),
                 ] + ([
@@ -3961,8 +3974,8 @@ def display_box_hover(hoverData, x_axis, y_axis, is_sample):
         children = [
             html.Div([
                 html.H4(f"Patient {pt_id}", style={'textAlign': 'center', 'color': 'black', 'fontSize': '14px'}),
-                html.P(f"{x_axis}: {x_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
-                html.P(f"{y_axis}: {y_val:.2f}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{x_axis}: {x_display}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
+                html.P(f"{y_axis}: {y_display}", style={'color': 'black', 'margin': '1px', 'fontSize': '12px'}),
                 html.P(f"Error loading images: {str(e)}", style={'color': 'red', 'fontSize': '10px'})
             ], style={
                 'backgroundColor': 'white',
